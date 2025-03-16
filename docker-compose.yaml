@@ -1,0 +1,35 @@
+name: steves
+
+services:
+  api:
+    container_name: steves-api
+    build:
+      context: .
+      target: prod
+    env_file: ./.env
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    ports:
+      - "3004:${APP_PORT}"
+    depends_on:
+      - db
+
+  db:
+    image: postgres
+    container_name: db
+    restart: always
+    shm_size: 128mb
+    env_file: ./.env
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
