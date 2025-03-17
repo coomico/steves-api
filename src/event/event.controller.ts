@@ -11,9 +11,7 @@ import {
   Post,
   Put,
   Query,
-  Req,
   SerializeOptions,
-  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -26,12 +24,15 @@ import {
   Cursor,
   MAX_NUMBER_ATTACHMENTS,
   OrderOptions,
-  RequestWithClaims,
   StatusOptions,
 } from 'src/common/utils';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { AttachmentService } from 'src/attachment/attachment.service';
-import { EventCategory, EventStatus } from 'src/common/enums';
+import {
+  EventAttachmentType,
+  EventCategory,
+  EventStatus,
+} from 'src/common/enums';
 import { OrderParsePipe } from 'src/common/pipe/order-parse.pipe';
 import { CategoryParsePipe } from 'src/common/pipe/category-parse.pipe';
 import { StatusParsePipe } from 'src/common/pipe/status-parse.pipe';
@@ -41,6 +42,7 @@ import {
   EventAttachmentValidation,
   LogoBannerValidation,
 } from 'src/common/pipe/attachment-validation.pipe';
+import { User } from 'src/common/decorator/user.decorator';
 
 @Controller('events')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -51,7 +53,7 @@ export class EventController {
   ) {}
 
   @Get()
-  async fetchAll(
+  fetchAll(
     @Query('take', new DefaultValuePipe(10), ParseIntPipe) take: number,
     @Query('title') title?: string,
     @Query(
@@ -74,7 +76,7 @@ export class EventController {
     status?: StatusOptions<EventStatus, EventStatus.DRAFT>[],
     @Query('cursor', new CursorExtractionPipe()) cursor?: Cursor,
   ) {
-    return await this.eventService.findAll(
+    return this.eventService.findAll(
       take,
       undefined,
       title,
@@ -88,8 +90,8 @@ export class EventController {
 
   @Get('owned')
   @UseGuards(AccessAuthGuard)
-  async fetchAllOwned(
-    @Req() req: RequestWithClaims,
+  fetchAllOwned(
+    @User('id') userId: number,
     @Query('take', new DefaultValuePipe(10), ParseIntPipe) take: number,
     @Query('title') title?: string,
     @Query(
@@ -112,9 +114,9 @@ export class EventController {
     status?: StatusOptions<EventStatus, EventStatus.DRAFT>[],
     @Query('cursor', new CursorExtractionPipe()) cursor?: Cursor,
   ) {
-    return await this.eventService.findAll(
+    return this.eventService.findAll(
       take,
-      req.user.id,
+      userId,
       title,
       order,
       category,
@@ -148,16 +150,16 @@ export class EventController {
       { name: 'banner', maxCount: 1 },
     ]),
   )
-  async create(
-    @Req() req: RequestWithClaims,
-    @UploadedFile(new LogoBannerValidation(new FileValidationService()))
-    fields: {
+  create(
+    @User('id') userId: number,
+    @UploadedFiles(new LogoBannerValidation(new FileValidationService()))
+    files: {
       logo?: Express.Multer.File;
       banner?: Express.Multer.File;
     },
     @Body() data: CreateEventDTO,
   ) {
-    return await this.eventService.create(data, req.user.id, fields);
+    return this.eventService.create(data, userId, files);
   }
 
   @Put(':id')
@@ -168,17 +170,17 @@ export class EventController {
       { name: 'banner', maxCount: 1 },
     ]),
   )
-  async update(
-    @Req() req: RequestWithClaims,
+  update(
+    @User('id') userId: number,
     @Param('id') eventId: number,
     @Body() data: UpdateEventDTO,
-    @UploadedFile(new LogoBannerValidation(new FileValidationService()))
+    @UploadedFiles(new LogoBannerValidation(new FileValidationService()))
     files: {
       logo?: Express.Multer.File;
       banner?: Express.Multer.File;
     },
   ) {
-    return await this.eventService.update(data, eventId, req.user.id, files);
+    return this.eventService.update(data, eventId, userId, files);
   }
 
   @Get(':id/attachments')
@@ -187,6 +189,7 @@ export class EventController {
       'event',
       {
         event: { id: eventId },
+        type: EventAttachmentType.OTHER,
       },
       true,
     );
@@ -201,7 +204,7 @@ export class EventController {
     ]),
   )
   uploadAttachments(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') eventId: number,
     @UploadedFiles(new EventAttachmentValidation(new FileValidationService()))
     files: {
@@ -209,13 +212,13 @@ export class EventController {
       private_attachments?: Express.Multer.File[];
     },
   ) {
-    return this.eventService.addAttachments(eventId, files, req.user.id);
+    return this.eventService.addAttachments(eventId, files, userId);
   }
 
   @Delete(':eid/attachments/:aid')
   @UseGuards(AccessAuthGuard)
   removeAttachment(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('eid') eventId: number,
     @Param('aid') attachmentId: number,
   ) {
@@ -223,13 +226,13 @@ export class EventController {
       attachmentId,
       'event',
       eventId,
-      req.user.id,
+      userId,
     );
   }
 
   @Delete(':id')
   @UseGuards(AccessAuthGuard)
-  remove(@Req() req: RequestWithClaims, @Param('id') eventId: number) {
-    return this.eventService.remove(eventId, req.user.id);
+  remove(@User('id') userId: number, @Param('id') eventId: number) {
+    return this.eventService.remove(eventId, userId);
   }
 }

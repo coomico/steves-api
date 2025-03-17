@@ -8,7 +8,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
   Res,
   UseGuards,
   UseInterceptors,
@@ -17,8 +16,9 @@ import { LinkService } from './link.service';
 import { LinkDTO, UpdateLinkDTO } from 'src/common/dtos';
 import { ApiBody } from '@nestjs/swagger';
 import { AccessAuthGuard } from 'src/auth/guard/access.guard';
-import { CACHE_TTL, RequestWithClaims } from 'src/common/utils';
+import { CACHE_TTL } from 'src/common/utils';
 import { Response } from 'express';
+import { User } from 'src/common/decorator/user.decorator';
 
 @Controller('links')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -33,15 +33,11 @@ export class LinkController {
   @Get(':id')
   @UseGuards(AccessAuthGuard)
   async accessLink(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') linkId: number,
     @Res() res: Response,
   ) {
-    const link = await this.linkService.findById(
-      linkId,
-      req.user.id,
-      CACHE_TTL,
-    );
+    const link = await this.linkService.findById(linkId, userId, CACHE_TTL);
     return res.redirect(link.url);
   }
 
@@ -52,26 +48,26 @@ export class LinkController {
   @Post()
   @UseGuards(AccessAuthGuard)
   create(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Query('eventid') eventId: number,
     @Body() data: LinkDTO | LinkDTO[],
   ) {
-    return this.linkService.create(data, eventId, req.user.id);
+    return this.linkService.create(data, eventId, userId);
   }
 
   @Put(':id')
   @UseGuards(AccessAuthGuard)
   update(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') linkId: number,
     @Body() data: UpdateLinkDTO,
   ) {
-    return this.linkService.update(data, linkId, req.user.id);
+    return this.linkService.update(data, linkId, userId);
   }
 
   @Delete(':id')
   @UseGuards(AccessAuthGuard)
-  remove(@Req() req: RequestWithClaims, @Param('id') linkId: number) {
-    return this.linkService.remove(linkId, req.user.id);
+  remove(@User('id') userId: number, @Param('id') linkId: number) {
+    return this.linkService.remove(linkId, userId);
   }
 }

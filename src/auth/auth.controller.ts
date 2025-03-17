@@ -1,15 +1,12 @@
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { UserDTO } from 'src/common/dtos';
+import { UserDTO, UserInfo } from 'src/common/dtos';
 import { AuthService } from './auth.service';
 import { GoogleOauthGuard } from './guard/google-oauth.guard';
 import { RefreshAuthGuard } from './guard/refresh.guard';
-import {
-  REFRESH_EXPIRED,
-  REFRESH_NAME,
-  RequestWithClaims,
-} from 'src/common/utils';
+import { REFRESH_EXPIRED, REFRESH_NAME } from 'src/common/utils';
 import { ApiCookieAuth } from '@nestjs/swagger';
+import { User } from 'src/common/decorator/user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -32,23 +29,25 @@ export class AuthController {
       sameSite: 'none',
     });
 
-    return res.redirect(`${process.env.FRONTEND_CALLBACK_URL}?access_token=${tokens[0]}`);
+    return res.redirect(
+      `${process.env.FRONTEND_CALLBACK_URL}?access_token=${tokens[0]}`,
+    );
   }
 
   @Get('refresh')
   @UseGuards(RefreshAuthGuard)
   @ApiCookieAuth('refreshToken')
-  async refresh(@Req() req: RequestWithClaims) {
+  async refresh(@User('id') userId: number) {
     return {
-      access_token: await this.authService.refreshAccess(req),
+      access_token: await this.authService.refreshAccess(userId),
     };
   }
 
   @Post('logout')
   @UseGuards(RefreshAuthGuard)
   @ApiCookieAuth('refreshToken')
-  async logout(@Req() req: RequestWithClaims, @Res() res: Response) {
-    await this.authService.logout(req);
+  logout(@User() user: UserInfo, @Res() res: Response) {
+    this.authService.logout(user);
 
     res.cookie(REFRESH_NAME, '', {
       httpOnly: true,
@@ -65,8 +64,8 @@ export class AuthController {
   @Post('logoutall')
   @UseGuards(RefreshAuthGuard)
   @ApiCookieAuth('refreshToken')
-  async logoutAll(@Req() req: RequestWithClaims, @Res() res: Response) {
-    await this.authService.logoutAll(req);
+  logoutAll(@User() user: UserInfo, @Res() res: Response) {
+    this.authService.logoutAll(user);
 
     res.cookie(REFRESH_NAME, '', {
       httpOnly: true,

@@ -1,12 +1,4 @@
 import { User } from 'src/user/user.entity';
-import { Request } from 'express';
-
-export interface RequestWithClaims extends Request {
-  user: {
-    id: number;
-    token: string;
-  };
-}
 
 export type DeepPartial<T> = T extends object
   ? {

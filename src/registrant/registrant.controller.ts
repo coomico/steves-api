@@ -11,7 +11,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -22,7 +21,6 @@ import { AccessAuthGuard } from 'src/auth/guard/access.guard';
 import {
   MAX_NUMBER_ATTACHMENTS,
   OrderOptions,
-  RequestWithClaims,
   StatusOptions,
 } from 'src/common/utils';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -33,6 +31,7 @@ import { OrderParsePipe } from 'src/common/pipe/order-parse.pipe';
 import { StatusParsePipe } from 'src/common/pipe/status-parse.pipe';
 import { RegistrantStatus } from 'src/common/enums';
 import { RegistrantAttachment } from 'src/attachment/attachment.entity';
+import { User } from 'src/common/decorator/user.decorator';
 
 @Controller('registrants')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -45,19 +44,19 @@ export class RegistrantController {
   @Get(':id')
   @UseGuards(AccessAuthGuard)
   async fetchById(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') registrantId: number,
   ) {
     const registrant = await this.registrantService.findOne(
       [
         {
           id: registrantId,
-          user: { id: req.user.id },
+          user: { id: userId },
         },
         {
           id: registrantId,
           event: {
-            author: { id: req.user.id },
+            author: { id: userId },
           },
         },
       ],
@@ -76,7 +75,7 @@ export class RegistrantController {
       true,
     );
 
-    if (registrant.user.id === req.user.id) {
+    if (registrant.user.id === userId) {
       const { user, deleted_at, ...rest } = registrant;
       return rest;
     }
@@ -88,7 +87,7 @@ export class RegistrantController {
   @Get()
   @UseGuards(AccessAuthGuard)
   fetchAll(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Query('eventid', ParseIntPipe) eventId: number,
     @Query('take', new DefaultValuePipe(10), ParseIntPipe) take: number,
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
@@ -109,7 +108,7 @@ export class RegistrantController {
       eventId,
       take,
       skip,
-      req.user.id,
+      userId,
       order,
       status,
       true,
@@ -118,8 +117,8 @@ export class RegistrantController {
 
   @Post()
   @UseGuards(AccessAuthGuard)
-  regist(@Req() req: RequestWithClaims, @Body() data: NewRegistrantDTO) {
-    return this.registrantService.create(data, req.user.id);
+  regist(@User('id') userId: number, @Body() data: NewRegistrantDTO) {
+    return this.registrantService.create(data, userId);
   }
 
   @Get(':id/attachments')
@@ -138,24 +137,20 @@ export class RegistrantController {
   @UseGuards(AccessAuthGuard)
   @UseInterceptors(FilesInterceptor('attachments', MAX_NUMBER_ATTACHMENTS))
   uploadAttachments(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') registrantId: number,
     @UploadedFiles(
       new RegistrantAttachmentValidation(new FileValidationService()),
     )
     files?: Express.Multer.File[],
   ) {
-    return this.registrantService.addAttachments(
-      registrantId,
-      req.user.id,
-      files,
-    );
+    return this.registrantService.addAttachments(registrantId, userId, files);
   }
 
   @Delete(':rid/attachments/:aid')
   @UseGuards(AccessAuthGuard)
   removeAttachment(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('rid') registrantId: number,
     @Param('aid') attachmentId: number,
   ) {
@@ -163,23 +158,23 @@ export class RegistrantController {
       attachmentId,
       'registrant',
       registrantId,
-      req.user.id,
+      userId,
     );
   }
 
   @Put(':id')
   @UseGuards(AccessAuthGuard)
   update(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') registrantId: number,
     @Body() data: UpdateRegistrantDTO,
   ) {
-    return this.registrantService.update(data, registrantId, req.user.id);
+    return this.registrantService.update(data, registrantId, userId);
   }
 
   @Delete(':id')
   @UseGuards(AccessAuthGuard)
-  remove(@Req() req: RequestWithClaims, @Param('id') registrantId: number) {
-    return this.registrantService.remove(registrantId, req.user.id);
+  remove(@User('id') userId: number, @Param('id') registrantId: number) {
+    return this.registrantService.remove(registrantId, userId);
   }
 }

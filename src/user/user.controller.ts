@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   Put,
-  Req,
   SerializeOptions,
   UseGuards,
   UseInterceptors,
@@ -12,7 +11,7 @@ import {
 import { UserService } from './user.service';
 import { UpdateUserDTO } from 'src/common/dtos';
 import { AccessAuthGuard } from 'src/auth/guard/access.guard';
-import { RequestWithClaims } from 'src/common/utils';
+import { User } from 'src/common/decorator/user.decorator';
 
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -27,9 +26,9 @@ export class UserController {
   @Get('/me')
   @UseGuards(AccessAuthGuard)
   @SerializeOptions({ groups: ['user'] })
-  fetchById(@Req() req: RequestWithClaims) {
+  fetchById(@User('id') userId: number) {
     return this.userService.findById(
-      req.user.id,
+      userId,
       {
         events: true,
         registrants: true,
@@ -40,7 +39,7 @@ export class UserController {
 
   @Put()
   @UseGuards(AccessAuthGuard)
-  update(@Req() req: RequestWithClaims, @Body() data: UpdateUserDTO) {
-    return this.userService.update(data, req.user.id);
+  update(@User('id') userId: number, @Body() data: UpdateUserDTO) {
+    return this.userService.update(data, userId);
   }
 }

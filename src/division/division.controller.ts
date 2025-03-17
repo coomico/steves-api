@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
   SerializeOptions,
   UseGuards,
   UseInterceptors,
@@ -18,7 +17,7 @@ import { DivisionService } from './division.service';
 import { DivisionDTO, UpdateDivisionDTO } from 'src/common/dtos';
 import { ApiBody } from '@nestjs/swagger';
 import { AccessAuthGuard } from 'src/auth/guard/access.guard';
-import { RequestWithClaims } from 'src/common/utils';
+import { User } from 'src/common/decorator/user.decorator';
 
 @Controller('divisions')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -47,26 +46,26 @@ export class DivisionController {
   @UseGuards(AccessAuthGuard)
   @SerializeOptions({ groups: ['division'] })
   create(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Query('eventid', ParseIntPipe) eventId: number,
     @Body() data: DivisionDTO | DivisionDTO[],
   ) {
-    return this.divisionService.create(data, eventId, req.user.id);
+    return this.divisionService.create(data, eventId, userId);
   }
 
   @Put(':id')
   @UseGuards(AccessAuthGuard)
   update(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') divisionId: number,
     @Body() data: UpdateDivisionDTO,
   ) {
-    return this.divisionService.update(data, divisionId, req.user.id);
+    return this.divisionService.update(data, divisionId, userId);
   }
 
   @Delete(':id')
   @UseGuards(AccessAuthGuard)
-  remove(@Req() req: RequestWithClaims, @Param('id') divisionId: number) {
-    return this.divisionService.remove(divisionId, req.user.id);
+  remove(@User('id') userId: number, @Param('id') divisionId: number) {
+    return this.divisionService.remove(divisionId, userId);
   }
 }

@@ -8,7 +8,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
   SerializeOptions,
   UseGuards,
   UseInterceptors,
@@ -23,7 +22,7 @@ import {
 } from 'src/common/dtos';
 import { ApiBody } from '@nestjs/swagger';
 import { AccessAuthGuard } from 'src/auth/guard/access.guard';
-import { RequestWithClaims } from 'src/common/utils';
+import { User } from 'src/common/decorator/user.decorator';
 
 @Controller('interviews')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -56,25 +55,21 @@ export class InterviewController {
   @Post()
   @UseGuards(AccessAuthGuard)
   setupInterview(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Query('eventid') eventId: number,
     @Body() data: InterviewDTO,
   ) {
-    return this.interviewService.setupInterview(data, eventId, req.user.id);
+    return this.interviewService.setupInterview(data, eventId, userId);
   }
 
   @Put(':id')
   @UseGuards(AccessAuthGuard)
   updateInterview(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') interviewId: number,
     @Body() data: UpdateInterviewDTO,
   ) {
-    return this.interviewService.updateInterview(
-      data,
-      interviewId,
-      req.user.id,
-    );
+    return this.interviewService.updateInterview(data, interviewId, userId);
   }
 
   @ApiBody({
@@ -84,17 +79,17 @@ export class InterviewController {
   @Post(':id/blockings')
   @UseGuards(AccessAuthGuard)
   createBlockings(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') interviewId: number,
     @Body() data: InterviewBlockingDTO | InterviewBlockingDTO[],
   ) {
-    return this.interviewService.addBlocking(data, interviewId, req.user.id);
+    return this.interviewService.addBlocking(data, interviewId, userId);
   }
 
   @Put('iid:/blockings/:bid')
   @UseGuards(AccessAuthGuard)
   updateBlocking(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('iid') interviewId: number,
     @Param('bid') blockingId: number,
     @Body() data: UpdateInterviewBlockingDTO,
@@ -103,41 +98,38 @@ export class InterviewController {
       data,
       interviewId,
       blockingId,
-      req.user.id,
+      userId,
     );
   }
 
   @Delete(':iid/blockings/:bid')
   @UseGuards(AccessAuthGuard)
   deleteBlocking(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('iid') interviewId: number,
     @Param('bid') blockingId: number,
   ) {
     return this.interviewService.deleteBlocking(
       interviewId,
       blockingId,
-      req.user.id,
+      userId,
     );
   }
 
   @Get(':id/schedules')
   @UseGuards(AccessAuthGuard)
   @SerializeOptions({ groups: ['schedule'] })
-  fetchSchedules(
-    @Req() req: RequestWithClaims,
-    @Param('id') interviewId: number,
-  ) {
+  fetchSchedules(@User('id') userId: number, @Param('id') interviewId: number) {
     return this.interviewService.findSchedulesByInterviewId(
       interviewId,
-      req.user.id,
+      userId,
     );
   }
 
   @Post(':id/schedules')
   @UseGuards(AccessAuthGuard)
   bookingSchedule(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') interviewId: number,
     @Query('registrantid') registrantId: number,
     @Body() data: InterviewScheduleDTO,
@@ -146,21 +138,21 @@ export class InterviewController {
       data,
       interviewId,
       registrantId,
-      req.user.id,
+      userId,
     );
   }
 
   @Delete(':iid/schedules/:sid')
   @UseGuards(AccessAuthGuard)
   cancelSchedule(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('iid') interviewId: number,
     @Param('sid') scheduleId: number,
   ) {
     return this.interviewService.cancelSchedule(
       interviewId,
       scheduleId,
-      req.user.id,
+      userId,
     );
   }
 }

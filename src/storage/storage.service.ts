@@ -24,12 +24,10 @@ import {
   ObjectsOnBucket,
   ObjectWithProperties,
   R2_BUCKET,
-  R2_PRESIGNED_URL_EXPIRED,
 } from 'src/common/utils';
 import * as crypto from 'crypto';
 import { v7 as uuidv7 } from 'uuid';
 import * as path from 'path';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class StorageService extends S3Client implements OnModuleInit {
@@ -180,20 +178,6 @@ export class StorageService extends S3Client implements OnModuleInit {
     }
   }
 
-  // delete soon, cause this func take one operation which same as GetObjectFromR2()
-  async getPresignedUrl(key: string, bucket: string) {
-    return await getSignedUrl(
-      this,
-      new GetObjectCommand({
-        Bucket: bucket,
-        Key: key,
-      }),
-      {
-        expiresIn: R2_PRESIGNED_URL_EXPIRED,
-      },
-    );
-  }
-
   async moveObjectBucketR2(
     oldKey: string,
     sourceBucket: string,
@@ -256,7 +240,6 @@ export class StorageService extends S3Client implements OnModuleInit {
       objectBucketMap.values(),
     );
 
-    let totalObjectsDeleted = 0;
     objectCollection.forEach(async (collection) => {
       const bulkDeleteCommand = new DeleteObjectsCommand({
         Bucket: collection.Bucket,
@@ -271,12 +254,10 @@ export class StorageService extends S3Client implements OnModuleInit {
         res.Errors.forEach((err) => this.logger.error(err.Message));
       }
 
-      totalObjectsDeleted += res.Deleted ? res.Deleted.length : 0;
+      this.logger.debug(
+        `${res.Deleted?.length} Objects were deleted successfully.`,
+      );
     });
-
-    this.logger.debug(
-      `${totalObjectsDeleted} Objects were deleted successfully.`,
-    );
 
     return;
   }
