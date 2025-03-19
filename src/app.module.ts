@@ -22,9 +22,16 @@ import { Event } from './event/event.entity';
 import { Registrant } from './registrant/registrant.entity';
 import { Division } from './division/division.entity';
 import { Link } from './link/link.entity';
-import { EventAttachment, RegistrantAttachment } from './attachment/attachment.entity';
+import {
+  EventAttachment,
+  RegistrantAttachment,
+} from './attachment/attachment.entity';
 import { SelectedDivision } from './selected_division/selected_division.entity';
-import { Interview, InterviewBlocking, InterviewSchedule } from './interview/interview.entity';
+import {
+  Interview,
+  InterviewBlocking,
+  InterviewSchedule,
+} from './interview/interview.entity';
 import { RefreshToken } from './auth/auth.entity';
 
 @Module({

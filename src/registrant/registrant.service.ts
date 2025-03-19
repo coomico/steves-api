@@ -167,8 +167,6 @@ export class RegistrantService {
   }
 
   async create(newRegistrant: NewRegistrantDTO, userId: number) {
-    const registrant = new Registrant();
-
     const [user, event] = await Promise.all([
       this.userService.findById(userId),
       this.eventService.findById(
@@ -185,6 +183,7 @@ export class RegistrantService {
       ),
     ]);
 
+    const registrant = new Registrant();
     registrant.user = user;
     registrant.event = event;
 
@@ -250,8 +249,9 @@ export class RegistrantService {
             RegistrantAttachment,
           );
 
-          registrant.attachments = attachments;
-          await manager.save(registrant);
+          manager
+            .getRepository(RegistrantAttachment)
+            .save(attachments.map((a) => ({ ...a, registrant })));
 
           return attachments;
         },

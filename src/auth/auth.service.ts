@@ -5,18 +5,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserDTO } from 'src/common/dtos';
+import { UserDTO, UserInfo } from 'src/common/dtos';
 import { UserService } from 'src/user/user.service';
 import { LessThanOrEqual, Repository } from 'typeorm';
 import { RefreshToken } from './auth.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { nanoid } from 'nanoid';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import {
-  ACCESS_EXPIRED,
-  REFRESH_EXPIRED,
-  RequestWithClaims,
-} from 'src/common/utils';
+import { ACCESS_EXPIRED, REFRESH_EXPIRED } from 'src/common/utils';
 
 @Injectable()
 export class AuthService {
@@ -32,8 +28,8 @@ export class AuthService {
     timestamp: true,
   });
 
-  private async generateAccessToken(userId: number) {
-    return await this.jwtService.signAsync(
+  private generateAccessToken(userId: number) {
+    return this.jwtService.signAsync(
       {
         sub: userId,
       },
@@ -47,6 +43,9 @@ export class AuthService {
   private async generateRefreshToken(userId: number) {
     const token = nanoid();
 
+    const expired = new Date();
+    expired.setSeconds(expired.getSeconds() + REFRESH_EXPIRED);
+
     const jwt = await this.jwtService.signAsync(
       {
         sub: userId,
@@ -58,14 +57,11 @@ export class AuthService {
       },
     );
 
-    const expired = new Date();
-    expired.setSeconds(expired.getSeconds() + REFRESH_EXPIRED);
-
     return { token, jwt, expired };
   }
 
-  private async generateTokenPairs(userId: number) {
-    return await Promise.all([
+  private generateTokenPairs(userId: number) {
+    return Promise.all([
       this.generateAccessToken(userId),
       this.generateRefreshToken(userId),
     ]);
@@ -106,7 +102,6 @@ export class AuthService {
     if (!reqUser) throw new BadRequestException('Unauthenticated');
 
     const user = await this.userService.findBy({ email: reqUser.email }, true);
-
     if (!user) return this.register(reqUser);
 
     const tokens = await this.generateTokenPairs(user.id);
@@ -132,15 +127,12 @@ export class AuthService {
     return tokens;
   }
 
-  async refreshAccess(claims: RequestWithClaims) {
-    return await this.generateAccessToken(claims.user.id);
+  refreshAccess(userId: number) {
+    return this.generateAccessToken(userId);
   }
 
-  async logout(claims: RequestWithClaims) {
-    const token = await this.validateExistRefreshToken(
-      claims.user.id,
-      claims.user.token,
-    );
+  async logout(user: UserInfo) {
+    const token = await this.validateExistRefreshToken(user.id, user.token);
     if (token.valid !== true)
       throw new UnauthorizedException('Missing or invalid token!');
 
@@ -148,27 +140,26 @@ export class AuthService {
       .delete(token.id)
       .then((res) =>
         this.logger.warn(
-          `Delete ${res.affected} token: ${claims.user.token} from user: ${claims.user.id}`,
+          `Delete ${res.affected} token: ${user.token} from user: ${user.id}`,
         ),
       );
 
     return;
   }
 
-  async logoutAll(claims: RequestWithClaims) {
+  async logoutAll(user: UserInfo) {
     if (
-      (await this.validateExistRefreshToken(claims.user.id, claims.user.token))
-        .valid !== true
+      (await this.validateExistRefreshToken(user.id, user.token)).valid !== true
     )
       throw new UnauthorizedException('Missing or invalid token!');
 
     const { affected } = await this.refreshTokenRepository.delete({
       user: {
-        id: claims.user.id,
+        id: user.id,
       },
     });
 
-    this.logger.warn(`Delete ${affected} tokens from user: ${claims.user.id}`);
+    this.logger.warn(`Delete ${affected} tokens from user: ${user.id}`);
     return;
   }
 

@@ -3,13 +3,12 @@ import {
   Get,
   Param,
   Query,
-  Req,
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { AttachmentService } from './attachment.service';
 import { AccessAuthGuard } from 'src/auth/guard/access.guard';
-import { RequestWithClaims } from 'src/common/utils';
+import { User } from 'src/common/decorator/user.decorator';
 
 @Controller('attachments')
 export class AttachmentController {
@@ -18,14 +17,14 @@ export class AttachmentController {
   @Get('/:id')
   @UseGuards(AccessAuthGuard)
   async getAttachment(
-    @Req() req: RequestWithClaims,
+    @User('id') userId: number,
     @Param('id') attachmentId: number,
     @Query('entity') entity: 'event' | 'registrant',
   ) {
     const attachment = await this.attachmentService.findById(
       attachmentId,
       entity,
-      req.user.id,
+      userId,
     );
     return new StreamableFile(attachment.buffer, {
       type: attachment.content_type,

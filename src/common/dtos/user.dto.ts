@@ -22,3 +22,8 @@ export class UserDTO {
 export class UpdateUserDTO extends PartialType(
   OmitType(UserDTO, ['email', 'nim', 'picture_path'] as const),
 ) {}
+
+export class UserInfo {
+  id: number;
+  token: string;
+}

@@ -64,24 +64,32 @@ export class LogoBannerValidation implements PipeTransform {
   constructor(private fileValidationService: FileValidationService) {}
 
   transform(
-    value:
-      | Partial<{
-          [key: string]: Express.Multer.File;
-        }>
-      | undefined,
+    value: Partial<{
+      [key: string]: Express.Multer.File[];
+    }>,
     metadata: ArgumentMetadata,
   ) {
-    if (value) {
-      Object.values(value).forEach((file) => {
-        if (file) {
-          this.fileValidationService.validateFile(file, {
-            allowedType: LOGO_BANNER_MIMETYPES,
-            maxSize: MAX_LOGO_BANNER_SIZE,
-          });
-        }
-      });
-    }
+    const files: Partial<{
+      [key: string]: Express.Multer.File;
+    }> = {};
 
-    return value;
+    Object.entries(value).forEach(([k, v]) => {
+      v?.forEach((file, index) => {
+        if (index === 1) {
+          throw new BadRequestException(
+            `Number of attachments exceeds the the maximum allowed (${1})!`,
+          );
+        }
+
+        this.fileValidationService.validateFile(file, {
+          allowedType: LOGO_BANNER_MIMETYPES,
+          maxSize: MAX_LOGO_BANNER_SIZE,
+        });
+
+        files[k] = file;
+      });
+    });
+
+    return files;
   }
 }

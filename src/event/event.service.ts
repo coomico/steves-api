@@ -145,14 +145,14 @@ export class EventService {
   async create(
     newEvent: CreateEventDTO,
     userId: number,
-    fields?: {
+    files?: {
       logo?: Express.Multer.File;
       banner?: Express.Multer.File;
     },
   ) {
     const author = await this.userService.findById(userId);
 
-    if (!fields || (!fields.logo && !fields.banner)) {
+    if (!files || (!files.logo && !files.banner)) {
       return await this.eventRepository.save({
         ...newEvent,
         author,
@@ -161,35 +161,56 @@ export class EventService {
 
     const [[logoMetadatas], [bannerMetadatas]] = await Promise.all([
       this.attachmentService.uploadAttachments(
-        fields.logo,
+        files.logo,
         userId,
         AttachmentStatus.PUBLIC,
       ),
       this.attachmentService.uploadAttachments(
-        fields.banner,
+        files.banner,
         userId,
         AttachmentStatus.PUBLIC,
       ),
     ]);
 
-    const attachments = this.attachmentService.add(
-      [
-        {
-          ...logoMetadatas,
-          type: EventAttachmentType.LOGO,
-        },
-        {
-          ...bannerMetadatas,
-          type: EventAttachmentType.BANNER,
-        },
-      ],
-      EventAttachment,
-    );
+    const attachments: EventAttachment[] = [];
+
+    if (logoMetadatas)
+      attachments.push(
+        ...this.attachmentService.add(
+          [
+            {
+              ...logoMetadatas,
+              type: EventAttachmentType.LOGO,
+            },
+          ],
+          EventAttachment,
+        ),
+      );
+
+    if (bannerMetadatas)
+      attachments.push(
+        ...this.attachmentService.add(
+          [
+            {
+              ...bannerMetadatas,
+              type: EventAttachmentType.BANNER,
+            },
+          ],
+          EventAttachment,
+        ),
+      );
+
+    const logo = logoMetadatas
+      ? `${process.env.R2_DEV_PUBLIC_BUCKET}/${logoMetadatas.storage_key}`
+      : undefined;
+    const banner = bannerMetadatas
+      ? `${process.env.R2_DEV_PUBLIC_BUCKET}/${bannerMetadatas.storage_key}`
+      : undefined;
 
     const event = await this.eventRepository.save({
       ...newEvent,
-      logo: `${process.env.R2_DEV_PUBLIC_BUCKET}/${logoMetadatas.storage_key}`,
-      banner: `${process.env.R2_DEV_PUBLIC_BUCKET}/${bannerMetadatas.storage_key}`,
+      logo,
+      banner,
       author,
       attachments,
     });
@@ -232,7 +253,7 @@ export class EventService {
 
     event = await eventRepository.save(event);
 
-    await attachmentRepository.save({
+    attachmentRepository.save({
       ...metadatas,
       type,
       event,
@@ -250,7 +271,7 @@ export class EventService {
     modifiedEvent: UpdateEventDTO,
     eventId: number,
     userId: number,
-    fields?: {
+    files?: {
       logo?: Express.Multer.File;
       banner?: Express.Multer.File;
     },
@@ -282,16 +303,16 @@ export class EventService {
           ...modifiedEvent,
         });
 
-        if (!fields || (!fields.logo && !fields.banner)) {
+        if (!files || (!files.logo && !files.banner)) {
           return event;
         }
 
         const updatedAttachments = [];
 
-        if (fields.logo) {
+        if (files.logo) {
           updatedAttachments.push(
             this.updateBannerLogo(
-              fields.logo,
+              files.logo,
               EventAttachmentType.LOGO,
               userId,
               event,
@@ -304,10 +325,10 @@ export class EventService {
           );
         }
 
-        if (fields.banner) {
+        if (files.banner) {
           updatedAttachments.push(
             this.updateBannerLogo(
-              fields.banner,
+              files.banner,
               EventAttachmentType.BANNER,
               userId,
               event,
@@ -350,18 +371,18 @@ export class EventService {
 
   async addAttachments(
     eventId: number,
-    fields: {
+    files: {
       public_attachments?: Express.Multer.File[];
       private_attachments?: Express.Multer.File[];
     },
     userId: number,
   ) {
-    if (!fields.private_attachments && !fields.public_attachments) return;
+    if (!files.private_attachments && !files.public_attachments) return;
 
-    let count = await this.eventAttachmentRepository
+    const count = await this.eventAttachmentRepository
       .createQueryBuilder()
       .where('event_id = :eventId', { eventId })
-      .andWhere('type NOT IN (...types)', {
+      .andWhere('type NOT IN (:...types)', {
         types: [EventAttachmentType.BANNER, EventAttachmentType.LOGO],
       })
       .getCount();
@@ -372,12 +393,13 @@ export class EventService {
       );
     }
 
-    Object.values(fields).map((f) => {
-      count += f.length;
+    let added = 0;
+    Object.values(files).map((f) => {
+      added += f.length;
 
-      if (count > MAX_NUMBER_ATTACHMENTS) {
+      if (added + count > MAX_NUMBER_ATTACHMENTS) {
         throw new BadRequestException(
-          `Number of attachments will exceeds the the maximum allowed (${MAX_NUMBER_ATTACHMENTS})!`,
+          `Cannot add ${added} attachment(s). You have ${count}/${MAX_NUMBER_ATTACHMENTS} attachments for this event.`,
         );
       }
     });
@@ -395,12 +417,12 @@ export class EventService {
       return await this.eventRepository.manager.transaction(async (manager) => {
         const [privateMetadatas, publicMetadatas] = await Promise.all([
           this.attachmentService.uploadAttachments(
-            fields.public_attachments,
+            files.public_attachments,
             userId,
             AttachmentStatus.PUBLIC,
           ),
           this.attachmentService.uploadAttachments(
-            fields.private_attachments,
+            files.private_attachments,
             userId,
             AttachmentStatus.PRIVATE,
           ),
@@ -413,11 +435,13 @@ export class EventService {
         });
 
         const attachments = this.attachmentService.add(
-          metadatas,
+          metadatas.map((m) => ({ ...m, type: EventAttachmentType.OTHER })),
           EventAttachment,
         );
-        event.attachments = attachments;
-        await manager.save(event);
+
+        manager
+          .getRepository(EventAttachment)
+          .save(attachments.map((a) => ({ ...a, event })));
 
         return attachments;
       });
