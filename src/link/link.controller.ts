@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseArrayPipe,
   Post,
   Put,
   Query,
@@ -50,7 +51,7 @@ export class LinkController {
   create(
     @User('id') userId: number,
     @Query('eventid') eventId: number,
-    @Body() data: LinkDTO | LinkDTO[],
+    @Body(new ParseArrayPipe({ items: LinkDTO })) data: LinkDTO[],
   ) {
     return this.linkService.create(data, eventId, userId);
   }

@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseArrayPipe,
   ParseIntPipe,
   Post,
   Put,
@@ -48,7 +49,7 @@ export class DivisionController {
   create(
     @User('id') userId: number,
     @Query('eventid', ParseIntPipe) eventId: number,
-    @Body() data: DivisionDTO | DivisionDTO[],
+    @Body(new ParseArrayPipe({ items: DivisionDTO })) data: DivisionDTO[],
   ) {
     return this.divisionService.create(data, eventId, userId);
   }

@@ -37,11 +37,7 @@ export class DivisionService {
     });
   }
 
-  async create(
-    newDivisions: DivisionDTO | DivisionDTO[],
-    eventId: number,
-    userId: number,
-  ) {
+  async create(newDivisions: DivisionDTO[], eventId: number, userId: number) {
     const event = await this.eventService.findById(
       eventId,
       undefined,
@@ -51,21 +47,13 @@ export class DivisionService {
       },
     );
 
-    if (Array.isArray(newDivisions))
-      return this.divisionRepository.save(
-        newDivisions.map((newDiv) =>
-          this.divisionRepository.create({
-            ...newDiv,
-            event,
-          }),
-        ),
-      );
-
     return this.divisionRepository.save(
-      this.divisionRepository.create({
-        ...newDivisions,
-        event,
-      }),
+      newDivisions.map((newDiv) =>
+        this.divisionRepository.create({
+          ...newDiv,
+          event,
+        }),
+      ),
     );
   }
 

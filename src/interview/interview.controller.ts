@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseArrayPipe,
   Post,
   Put,
   Query,
@@ -81,7 +82,8 @@ export class InterviewController {
   createBlockings(
     @User('id') userId: number,
     @Param('id') interviewId: number,
-    @Body() data: InterviewBlockingDTO | InterviewBlockingDTO[],
+    @Body(new ParseArrayPipe({ items: InterviewBlockingDTO }))
+    data: InterviewBlockingDTO[],
   ) {
     return this.interviewService.addBlocking(data, interviewId, userId);
   }

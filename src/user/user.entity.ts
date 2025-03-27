@@ -1,5 +1,6 @@
 import { Exclude, Expose } from 'class-transformer';
 import { RefreshToken } from 'src/auth/auth.entity';
+import { UserDegree, UserDepartment } from 'src/common/enums';
 import { Event } from 'src/event/event.entity';
 import { Registrant } from 'src/registrant/registrant.entity';
 import {
@@ -30,7 +31,42 @@ export class User {
   email: string;
 
   @Column()
-  picture_path: string;
+  picture: string;
+
+  @Column({
+    type: 'enum',
+    enum: UserDegree,
+    nullable: true,
+  })
+  degree: UserDegree;
+
+  @Column({
+    type: 'enum',
+    enum: UserDepartment,
+    nullable: true,
+  })
+  department: UserDepartment;
+
+  @Column({ nullable: true })
+  entry_year: number;
+
+  @Column({
+    length: 300,
+    nullable: true,
+  })
+  bio: string;
+
+  @Column({ nullable: true })
+  web_url: string;
+
+  @Column({ nullable: true })
+  linkedin_url: string;
+
+  @Column({ nullable: true })
+  github_url: string;
+
+  @Column({ nullable: true })
+  instagram_url: string;
 
   @CreateDateColumn({ type: 'timestamptz' })
   @Expose({ groups: ['user'] })

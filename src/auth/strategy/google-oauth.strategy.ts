@@ -22,10 +22,12 @@ export class GoogleOauthStrategy extends PassportStrategy(Strategy, 'google') {
   ): Promise<any> {
     const { id, displayName, emails, photos } = profile;
 
-    const nim =
-      process.env.NODE_ENV === 'production'
-        ? getNIM(emails[0].value)
-        : Math.floor(Math.random() * 4121239999).toString();
+    let nim = getNIM(emails[0].value);
+    nim ??=
+      process.env.NODE_ENV !== 'production'
+        ? Math.floor(Math.random() * 4121239999).toString()
+        : nim;
+
     if (!nim) {
       throw new BadRequestException('Email username does not contain NIM!');
     }
@@ -36,7 +38,7 @@ export class GoogleOauthStrategy extends PassportStrategy(Strategy, 'google') {
       name: displayName,
       email: emails[0].value,
       nim,
-      picture_path: photos[0].value,
+      picture: photos[0].value,
     };
 
     done(null, user);

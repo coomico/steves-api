@@ -183,7 +183,7 @@ export class InterviewService {
   }
 
   async addBlocking(
-    newBlockings: InterviewBlockingDTO | InterviewBlockingDTO[],
+    newBlockings: InterviewBlockingDTO[],
     interviewId: number,
     userId: number,
   ) {
@@ -198,21 +198,13 @@ export class InterviewService {
       },
     );
 
-    if (Array.isArray(newBlockings))
-      return this.interviewBlockingRepository.save(
-        newBlockings.map((blocking) =>
-          this.interviewBlockingRepository.create({
-            ...blocking,
-            interview,
-          }),
-        ),
-      );
-
     return this.interviewBlockingRepository.save(
-      this.interviewBlockingRepository.create({
-        ...newBlockings,
-        interview,
-      }),
+      newBlockings.map((blocking) =>
+        this.interviewBlockingRepository.create({
+          ...blocking,
+          interview,
+        }),
+      ),
     );
   }
 

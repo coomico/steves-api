@@ -4,7 +4,6 @@ import { Event } from './event.entity';
 import { EventController } from './event.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from 'src/user/user.module';
-import { EventSubscribe } from './event.subscribe';
 import { StorageModule } from 'src/storage/storage.module';
 import { EventAttachment } from 'src/attachment/attachment.entity';
 import { AttachmentModule } from 'src/attachment/attachment.module';
@@ -19,7 +18,7 @@ import { PaginationModule } from 'src/pagination/pagination.module';
     TypeOrmModule.forFeature([Event, EventAttachment]),
   ],
   exports: [EventService],
-  providers: [EventService, Event, EventSubscribe],
+  providers: [EventService, Event],
   controllers: [EventController],
 })
 export class EventModule {}

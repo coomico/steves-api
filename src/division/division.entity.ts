@@ -20,11 +20,23 @@ export class Division {
   @Column()
   name: string;
 
+  @Column({ default: 1 })
+  capacity: number;
+
   @Column({ nullable: true })
   description: string;
 
-  @Column({ default: 1 })
-  capacity: number;
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+  })
+  responsibilities: string | string[];
+
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+  })
+  requirements: string | string[];
 
   @DeleteDateColumn({ type: 'timestamptz' })
   @Exclude()

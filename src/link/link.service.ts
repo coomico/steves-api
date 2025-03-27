@@ -79,7 +79,7 @@ export class LinkService {
     return link;
   }
 
-  async create(newLinks: LinkDTO | LinkDTO[], eventId: number, userId: number) {
+  async create(newLinks: LinkDTO[], eventId: number, userId: number) {
     const event = await this.eventService.findById(
       eventId,
       undefined,
@@ -89,21 +89,13 @@ export class LinkService {
       },
     );
 
-    if (Array.isArray(newLinks))
-      return this.linkRepository.save(
-        newLinks.map((link) =>
-          this.linkRepository.create({
-            ...link,
-            event,
-          }),
-        ),
-      );
-
     return this.linkRepository.save(
-      this.linkRepository.create({
-        ...newLinks,
-        event,
-      }),
+      newLinks.map((link) =>
+        this.linkRepository.create({
+          ...link,
+          event,
+        }),
+      ),
     );
   }
 

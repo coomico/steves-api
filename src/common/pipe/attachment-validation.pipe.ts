@@ -69,6 +69,8 @@ export class LogoBannerValidation implements PipeTransform {
     }>,
     metadata: ArgumentMetadata,
   ) {
+    if (!value) return null;
+
     const files: Partial<{
       [key: string]: Express.Multer.File;
     }> = {};

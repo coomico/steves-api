@@ -76,7 +76,7 @@ export class UserService {
     user.email = newUser.email;
     user.name = newUser.name;
     user.nim = newUser.nim;
-    user.picture_path = newUser.picture_path;
+    user.picture = newUser.picture;
 
     return this.userRepository.save(user);
   }

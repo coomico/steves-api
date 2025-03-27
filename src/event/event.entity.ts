@@ -53,9 +53,6 @@ export class Event {
   max_selected_division: number;
 
   @Column({ nullable: true })
-  url: string;
-
-  @Column({ nullable: true })
   logo: string;
 
   @Column({ nullable: true })

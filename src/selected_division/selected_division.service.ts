@@ -14,16 +14,24 @@ export class SelectedDivisionService {
       return { id: div.division_id };
     });
     const idPriorityMap = new Map(
-      newSelectedDivisions.map((div) => [div.division_id, div.priority]),
+      newSelectedDivisions.map((div) => [
+        div.division_id,
+        {
+          priority: div.priority,
+          motivation_leter: div.motivation_letter,
+        },
+      ]),
     );
 
     const divs = await this.divisionService.findBy(ids, undefined, true);
-    if (!divs) throw new NotFoundException('No divisions found!');
+    if (!divs.length) throw new NotFoundException('No divisions found!');
 
     divs.forEach((div) => {
       const selected = new SelectedDivision();
       selected.division = div;
-      selected.priority = idPriorityMap.get(div.id) as number;
+      selected.priority = idPriorityMap.get(div.id)?.priority as number;
+      selected.motivation_letter = idPriorityMap.get(div.id)
+        ?.motivation_leter as string;
       selectedDivisions.push(selected);
     });
 
