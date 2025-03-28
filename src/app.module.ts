@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RegistrantModule } from './registrant/registrant.module';
 import { DivisionModule } from './division/division.module';
+import { FaqModule } from './faq/faq.module';
 import { LinkModule } from './link/link.module';
 import { AttachmentModule } from './attachment/attachment.module';
 import { SelectedDivisionModule } from './selected_division/selected_division.module';
@@ -33,6 +34,7 @@ import {
   InterviewSchedule,
 } from './interview/interview.entity';
 import { RefreshToken } from './auth/auth.entity';
+import { Faq } from './faq/faq.entity';
 
 @Module({
   imports: [
@@ -40,6 +42,7 @@ import { RefreshToken } from './auth/auth.entity';
     EventModule,
     RegistrantModule,
     DivisionModule,
+    FaqModule,
     LinkModule,
     AttachmentModule,
     ConfigModule.forRoot({
@@ -58,6 +61,7 @@ import { RefreshToken } from './auth/auth.entity';
         Event,
         Registrant,
         Division,
+        Faq,
         Link,
         EventAttachment,
         RegistrantAttachment,

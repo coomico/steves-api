@@ -36,6 +36,7 @@ import {
   RegistrantOrderKeys,
   StatusOptions,
 } from 'src/common/utils';
+import { Event } from 'src/event/event.entity';
 
 @Injectable()
 export class RegistrantService {
@@ -283,20 +284,22 @@ export class RegistrantService {
     registrantId: number,
     userId: number,
   ) {
-    const registrant = await this.findOne(
-      {
-        id: registrantId,
-        user: { id: userId },
-      },
-      undefined,
-      undefined,
-      true,
-    );
+    const subQb = this.registrantRepository.manager.getRepository(Event)
+      .createQueryBuilder('event')
+      .select('event.id')
+      .where('event.author_id = :userId');
 
-    const { affected } = await this.registrantRepository.update(
-      { id: registrant.id },
-      updatedData,
-    );
+    const { affected } = await this.registrantRepository
+      .createQueryBuilder()
+      .update()
+      .set(updatedData)
+      .where('id = :registrantId')
+      .andWhere(`event_id IN ( ${subQb.getQuery()} )`)
+      .andWhere('deleted_at IS NULL')
+      .setParameters({ registrantId, userId })
+      .execute();
+
+    if (affected === 0) throw new NotFoundException('Registrant not found!');
 
     return { affected };
   }

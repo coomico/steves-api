@@ -10,6 +10,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -18,6 +19,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Exclude, Expose } from 'class-transformer';
+import { Faq } from 'src/faq/faq.entity';
 
 @Entity()
 export class Event {
@@ -70,6 +72,7 @@ export class Event {
   @Exclude()
   deleted_at: Date;
 
+  @Index()
   @ManyToOne(() => User)
   @JoinColumn({ name: 'author_id' })
   @Expose({ groups: ['event'] })
@@ -102,6 +105,13 @@ export class Event {
   })
   @Exclude()
   links: Link[];
+
+  // call Faqs endpoint
+  @OneToMany(() => Faq, (faq) => faq.event, {
+    cascade: ['soft-remove'],
+  })
+  @Exclude()
+  faqs: Faq[];
 
   // call Attachments endpoint
   @OneToMany(

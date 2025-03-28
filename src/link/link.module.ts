@@ -7,7 +7,6 @@ import { EventModule } from 'src/event/event.module';
 
 @Module({
   imports: [EventModule, TypeOrmModule.forFeature([Link])],
-  exports: [LinkService],
   providers: [LinkService],
   controllers: [LinkController],
 })

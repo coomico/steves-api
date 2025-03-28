@@ -27,7 +27,7 @@ export class LinkController {
   constructor(private linkService: LinkService) {}
 
   @Get()
-  showAll(@Param('eventid') eventId: number) {
+  showAll(@Query('eventid') eventId: number) {
     return this.linkService.findAll(eventId, true);
   }
 

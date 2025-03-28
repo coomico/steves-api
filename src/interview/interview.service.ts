@@ -30,6 +30,7 @@ import {
 } from 'typeorm';
 import { EventService } from 'src/event/event.service';
 import { RegistrantService } from 'src/registrant/registrant.service';
+import { Event } from 'src/event/event.entity';
 
 @Injectable()
 export class InterviewService {
@@ -168,15 +169,21 @@ export class InterviewService {
     interviewId: number,
     userId: number,
   ) {
-    const { affected } = await this.interviewRepository.update(
-      {
-        id: interviewId,
-        event: {
-          author: { id: userId },
-        },
-      },
-      modifiedInterview,
-    );
+    const subQb = this.interviewRepository.manager.getRepository(Event)
+      .createQueryBuilder('event')
+      .select('event.id')
+      .where('event.author_id = :userId');
+
+    const { affected } = await this.interviewRepository
+      .createQueryBuilder()
+      .update()
+      .set(modifiedInterview)
+      .where('id = :interviewId')
+      .andWhere(`event_id IN ( ${subQb.getQuery()} )`)
+      .andWhere('deleted_at IS NULL')
+      .setParameters({ interviewId, userId })
+      .execute();
+
     if (affected === 0) throw new NotFoundException('Interview not found!');
 
     return { affected };
@@ -214,18 +221,27 @@ export class InterviewService {
     blockingId: number,
     userId: number,
   ) {
-    const { affected } = await this.interviewBlockingRepository.update(
-      {
-        id: blockingId,
-        interview: {
-          id: interviewId,
-          event: {
-            author: { id: userId },
-          },
-        },
-      },
-      modifiedBlocking,
-    );
+    const subQb2 = this.interviewRepository.manager.getRepository(Event)
+      .createQueryBuilder('event')
+      .select('event.id')
+      .where('event.author_id = :userId');
+    
+    const subQb = this.interviewRepository
+      .createQueryBuilder()
+      .select('id')
+      .where(`event_id IN (${subQb2.getQuery()})`);
+
+    const { affected } = await this.interviewBlockingRepository
+      .createQueryBuilder()
+      .update()
+      .set(modifiedBlocking)
+      .where('id = :blockingId')
+      .andWhere('interview_id = :interviewId')
+      .andWhere(`interview_id IN ( ${subQb.getQuery()} )`)
+      .andWhere('deleted_at IS NULL')
+      .setParameters({ blockingId, interviewId, userId })
+      .execute();
+
     if (affected === 0)
       throw new NotFoundException('Interview blocking not found!');
 

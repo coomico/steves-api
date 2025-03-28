@@ -46,6 +46,7 @@ export class Registrant {
   @Exclude()
   deleted_at: Date;
 
+  @Index()
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   @Exclude() // call User endpoint

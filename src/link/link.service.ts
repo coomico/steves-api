@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { EventService } from 'src/event/event.service';
 import { LinkDTO, UpdateLinkDTO } from 'src/common/dtos';
 import { LinkStatus } from 'src/common/enums';
+import { Event } from 'src/event/event.entity';
 
 @Injectable()
 export class LinkService {
@@ -99,16 +100,26 @@ export class LinkService {
     );
   }
 
-  async update(modifiedLink: UpdateLinkDTO, linkId: number, userId: number) {
-    const { affected } = await this.linkRepository.update(
-      {
-        id: linkId,
-        event: {
-          author: { id: userId },
-        },
-      },
-      modifiedLink,
-    );
+  async update(
+    modifiedLink: UpdateLinkDTO,
+    linkId: number,
+    userId: number
+  ) {
+    const subQb = this.linkRepository.manager.getRepository(Event)
+      .createQueryBuilder('event')
+      .select('event.id')
+      .where('event.author_id = :userId');
+
+    const { affected } = await this.linkRepository
+      .createQueryBuilder()
+      .update()
+      .set(modifiedLink)
+      .where('id = :linkId')
+      .andWhere(`event_id IN ( ${subQb.getQuery()} )`)
+      .andWhere('deleted_at IS NULL')
+      .setParameters({ linkId, userId })
+      .execute();
+
     if (affected === 0) throw new NotFoundException('Event link not found!');
     return { affected };
   }

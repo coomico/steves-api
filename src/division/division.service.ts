@@ -9,6 +9,7 @@ import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
 import { DivisionDTO, UpdateDivisionDTO } from 'src/common/dtos';
 import { EventService } from 'src/event/event.service';
 import { EventStatus } from 'src/common/enums';
+import { Event } from 'src/event/event.entity';
 
 @Injectable()
 export class DivisionService {
@@ -62,15 +63,21 @@ export class DivisionService {
     divisionId: number,
     userId: number,
   ) {
-    const { affected } = await this.divisionRepository.update(
-      {
-        id: divisionId,
-        event: {
-          author: { id: userId },
-        },
-      },
-      modifiedDivision,
-    );
+    const subQb = this.divisionRepository.manager.getRepository(Event)
+      .createQueryBuilder('event')
+      .select('event.id')
+      .where('event.author_id = :userId');
+
+    const { affected } = await this.divisionRepository
+      .createQueryBuilder()
+      .update()
+      .set(modifiedDivision)
+      .where('id = :divisionId')
+      .andWhere(`event_id IN ( ${subQb.getQuery()} )`)
+      .andWhere('deleted_at IS NULL')
+      .setParameters({ divisionId, userId })
+      .execute();
+
     if (affected === 0) throw new NotFoundException('Division not found!');
 
     return { affected };

@@ -88,7 +88,7 @@ export class InterviewController {
     return this.interviewService.addBlocking(data, interviewId, userId);
   }
 
-  @Put('iid:/blockings/:bid')
+  @Put(':iid/blockings/:bid')
   @UseGuards(AccessAuthGuard)
   updateBlocking(
     @User('id') userId: number,

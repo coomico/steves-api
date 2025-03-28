@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -13,6 +14,7 @@ import {
 } from 'typeorm';
 
 @Entity()
+@Index(['event', 'position'], { unique: true })
 export class Link {
   @PrimaryGeneratedColumn()
   id: number;
