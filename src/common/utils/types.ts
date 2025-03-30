@@ -35,7 +35,7 @@ export type EventOrderKeys =
   | 'datetime_start'
   | 'datetime_end';
 
-export type RegistrantOrderKeys = 'created_at' | 'updated_at';
+export type ApplicationOrderKeys = 'created_at' | 'updated_at';
 
 export type CategoryOptions<
   T extends string | number | bigint | boolean | null | undefined,

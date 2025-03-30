@@ -12,9 +12,10 @@ import { UserService } from './user.service';
 import { UpdateUserDTO } from 'src/common/dtos';
 import { AccessAuthGuard } from 'src/auth/guard/access.guard';
 import { User } from 'src/common/decorator/user.decorator';
+import { ResponseTransformInterceptor } from 'src/common/interceptor/response.interceptor';
 
 @Controller('users')
-@UseInterceptors(ClassSerializerInterceptor)
+@UseInterceptors(ClassSerializerInterceptor, new ResponseTransformInterceptor())
 export class UserController {
   constructor(private userService: UserService) {}
 
@@ -31,7 +32,7 @@ export class UserController {
       userId,
       {
         events: true,
-        registrants: true,
+        applications: true,
       },
       true,
     );

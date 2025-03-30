@@ -4,7 +4,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { QueryFailedFilter } from './common/filter/queryfailed.filter';
 import * as cookieParser from 'cookie-parser';
-import { ResponseTransformInterceptor } from './common/interceptor/response.interceptor';
 import { REFRESH_NAME } from './common/utils';
 
 async function bootstrap() {
@@ -25,8 +24,6 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new QueryFailedFilter());
-
-  app.useGlobalInterceptors(new ResponseTransformInterceptor());
 
   const docConfig = new DocumentBuilder()
     .setTitle('API Documentation')

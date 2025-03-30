@@ -1,4 +1,4 @@
-import { RegistrantStatus } from 'src/common/enums';
+import { ApplicationStatus } from '../enums/application-status.enum';
 import { SelectedDivisionDTO } from './division.dto';
 import {
   IsArray,
@@ -10,7 +10,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
-export class NewRegistrantDTO {
+export class NewApplicationDTO {
   @ApiProperty()
   @IsNumber()
   event_id: number;
@@ -26,16 +26,16 @@ export class NewRegistrantDTO {
   selected_divisions: SelectedDivisionDTO[];
 }
 
-class UpdateRegistrant {
+class UpdateApplication {
   @ApiProperty({
-    enum: RegistrantStatus,
+    enum: ApplicationStatus,
   })
-  @IsEnum(RegistrantStatus)
-  status: RegistrantStatus;
+  @IsEnum(ApplicationStatus)
+  status: ApplicationStatus;
 
   @ApiProperty()
   @IsString()
   notes: string;
 }
 
-export class UpdateRegistrantDTO extends PartialType(UpdateRegistrant) {}
+export class UpdateApplicationDTO extends PartialType(UpdateApplication) {}

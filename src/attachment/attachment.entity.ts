@@ -1,7 +1,7 @@
 import { Exclude } from 'class-transformer';
+import { Application } from 'src/application/application.entity';
 import { AttachmentStatus, EventAttachmentType } from 'src/common/enums';
 import { Event } from 'src/event/event.entity';
-import { Registrant } from 'src/registrant/registrant.entity';
 import {
   Column,
   CreateDateColumn,
@@ -69,9 +69,9 @@ export class EventAttachment extends Attachment {
 }
 
 @Entity()
-export class RegistrantAttachment extends Attachment {
-  @ManyToOne(() => Registrant)
-  @JoinColumn({ name: 'registrant_id' })
-  @Exclude() // call Registrant endpoint
-  registrant: Registrant;
+export class ApplicationAttachment extends Attachment {
+  @ManyToOne(() => Application)
+  @JoinColumn({ name: 'application_id' })
+  @Exclude() // call Application endpoint
+  application: Application;
 }

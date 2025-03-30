@@ -1,6 +1,6 @@
 import { Exclude } from 'class-transformer';
-import { RegistrantAttachment } from 'src/attachment/attachment.entity';
-import { RegistrantStatus } from 'src/common/enums';
+import { ApplicationAttachment } from 'src/attachment/attachment.entity';
+import { ApplicationStatus } from 'src/common/enums/application-status.enum';
 import { Event } from 'src/event/event.entity';
 import { InterviewSchedule } from 'src/interview/interview.entity';
 import { SelectedDivision } from 'src/selected_division/selected_division.entity';
@@ -21,16 +21,16 @@ import {
 
 @Entity()
 @Index(['user', 'event'], { unique: true })
-export class Registrant {
+export class Application {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({
     type: 'enum',
-    enum: RegistrantStatus,
-    default: RegistrantStatus.WAITING,
+    enum: ApplicationStatus,
+    default: ApplicationStatus.WAITING,
   })
-  status: RegistrantStatus;
+  status: ApplicationStatus;
 
   @Column({ nullable: true })
   notes: string;
@@ -59,7 +59,7 @@ export class Registrant {
 
   @OneToOne(
     () => InterviewSchedule,
-    (interviewSchedule) => interviewSchedule.registrant,
+    (interviewSchedule) => interviewSchedule.application,
     {
       eager: true,
       cascade: ['soft-remove', 'remove'],
@@ -68,18 +68,18 @@ export class Registrant {
   interview_schedule: InterviewSchedule;
 
   @OneToMany(
-    () => RegistrantAttachment,
-    (registrantAttachment) => registrantAttachment.registrant,
+    () => ApplicationAttachment,
+    (applicationAttachment) => applicationAttachment.application,
     {
       cascade: ['insert', 'soft-remove', 'remove'],
     },
   )
-  @Exclude() // call Registrant Attachments endpoint
-  attachments: RegistrantAttachment[];
+  @Exclude() // call Application Attachments endpoint
+  attachments: ApplicationAttachment[];
 
   @OneToMany(
     () => SelectedDivision,
-    (selectedDivision) => selectedDivision.registrant,
+    (selectedDivision) => selectedDivision.application,
     {
       cascade: ['insert', 'soft-remove', 'remove'],
     },

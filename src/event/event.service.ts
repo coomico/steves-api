@@ -75,9 +75,9 @@ export class EventService {
     const qb = this.eventRepository
       .createQueryBuilder('event')
       .loadRelationCountAndMap(
-        'event.total_registrants',
-        'event.registrants',
-        'registrant',
+        'event.total_applications',
+        'event.applications',
+        'application',
       )
       .loadRelationCountAndMap(
         'event.total_divisions',
@@ -478,7 +478,7 @@ export class EventService {
         divisions: {
           selected_divisions: true,
         },
-        registrants: {
+        applications: {
           attachments: true,
         },
         links: true,

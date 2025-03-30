@@ -19,9 +19,10 @@ import { DivisionDTO, UpdateDivisionDTO } from 'src/common/dtos';
 import { ApiBody } from '@nestjs/swagger';
 import { AccessAuthGuard } from 'src/auth/guard/access.guard';
 import { User } from 'src/common/decorator/user.decorator';
+import { ResponseTransformInterceptor } from 'src/common/interceptor/response.interceptor';
 
 @Controller('divisions')
-@UseInterceptors(ClassSerializerInterceptor)
+@UseInterceptors(ClassSerializerInterceptor, new ResponseTransformInterceptor())
 export class DivisionController {
   constructor(private divisionService: DivisionService) {}
 

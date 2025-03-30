@@ -5,7 +5,6 @@ import { UserModule } from './user/user.module';
 import { EventModule } from './event/event.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RegistrantModule } from './registrant/registrant.module';
 import { DivisionModule } from './division/division.module';
 import { FaqModule } from './faq/faq.module';
 import { LinkModule } from './link/link.module';
@@ -20,12 +19,11 @@ import { FileValidationModule } from './file_validation/file_validation.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { User } from './user/user.entity';
 import { Event } from './event/event.entity';
-import { Registrant } from './registrant/registrant.entity';
 import { Division } from './division/division.entity';
 import { Link } from './link/link.entity';
 import {
+  ApplicationAttachment,
   EventAttachment,
-  RegistrantAttachment,
 } from './attachment/attachment.entity';
 import { SelectedDivision } from './selected_division/selected_division.entity';
 import {
@@ -35,15 +33,17 @@ import {
 } from './interview/interview.entity';
 import { RefreshToken } from './auth/auth.entity';
 import { Faq } from './faq/faq.entity';
+import { ApplicationModule } from './application/application.module';
+import { Application } from './application/application.entity';
 
 @Module({
   imports: [
     UserModule,
     EventModule,
-    RegistrantModule,
     DivisionModule,
     FaqModule,
     LinkModule,
+    ApplicationModule,
     AttachmentModule,
     ConfigModule.forRoot({
       envFilePath: ['.env'],
@@ -59,12 +59,12 @@ import { Faq } from './faq/faq.entity';
       entities: [
         User,
         Event,
-        Registrant,
+        Application,
         Division,
         Faq,
         Link,
         EventAttachment,
-        RegistrantAttachment,
+        ApplicationAttachment,
         SelectedDivision,
         Interview,
         InterviewBlocking,

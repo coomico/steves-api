@@ -38,7 +38,7 @@ export class EventAttachmentValidation implements PipeTransform {
 }
 
 @Injectable()
-export class RegistrantAttachmentValidation implements PipeTransform {
+export class ApplicationAttachmentValidation implements PipeTransform {
   constructor(private fileValidationService: FileValidationService) {}
 
   transform(

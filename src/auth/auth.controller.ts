@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { UserDTO, UserInfo } from 'src/common/dtos';
 import { AuthService } from './auth.service';
@@ -7,8 +15,10 @@ import { RefreshAuthGuard } from './guard/refresh.guard';
 import { REFRESH_EXPIRED, REFRESH_NAME } from 'src/common/utils';
 import { ApiCookieAuth } from '@nestjs/swagger';
 import { User } from 'src/common/decorator/user.decorator';
+import { ResponseTransformInterceptor } from 'src/common/interceptor/response.interceptor';
 
 @Controller('auth')
+@UseInterceptors(new ResponseTransformInterceptor())
 export class AuthController {
   constructor(private authService: AuthService) {}
 

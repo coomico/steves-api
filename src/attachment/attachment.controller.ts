@@ -19,7 +19,7 @@ export class AttachmentController {
   async getAttachment(
     @User('id') userId: number,
     @Param('id') attachmentId: number,
-    @Query('entity') entity: 'event' | 'registrant',
+    @Query('entity') entity: 'event' | 'application',
   ) {
     const attachment = await this.attachmentService.findById(
       attachmentId,

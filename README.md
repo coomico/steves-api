@@ -15,7 +15,7 @@ Steves is the event management solution that finally lets your campus events pas
 - [x] User Management & Google OAuth
 - [x] Event Creation & Management
 - [x] Division Organization
-- [x] Registration System *(Google Forms found deceased)*
+- [x] Application System *(Google Forms found deceased)*
 - [x] Interview Scheduling and Blocking *(no more spreadsheet chaos)*
 - [x] File Attachments *(Drive? never met them)*
 - [x] Additional Links Management *(bye-bye Linktree)*

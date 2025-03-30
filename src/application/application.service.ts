@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Registrant } from './registrant.entity';
 import {
   FindOptionsOrder,
   FindOptionsRelations,
@@ -16,36 +15,36 @@ import {
   Not,
   Repository,
 } from 'typeorm';
-import { EventService } from 'src/event/event.service';
+import { Application } from './application.entity';
+import { ApplicationAttachment } from 'src/attachment/attachment.entity';
 import { UserService } from 'src/user/user.service';
+import { EventService } from 'src/event/event.service';
+import { StorageService } from 'src/storage/storage.service';
 import { AttachmentService } from 'src/attachment/attachment.service';
 import { SelectedDivisionService } from 'src/selected_division/selected_division.service';
-import { NewRegistrantDTO, UpdateRegistrantDTO } from 'src/common/dtos';
 import {
-  AttachmentStatus,
-  EventStatus,
-  RegistrantStatus,
-} from 'src/common/enums';
-import { RegistrantAttachment } from 'src/attachment/attachment.entity';
-import { StorageService } from 'src/storage/storage.service';
-import {
+  ApplicationOrderKeys,
   CACHE_TTL,
   MAX_NUMBER_ATTACHMENTS,
   OrderOptions,
   R2_BUCKET,
-  RegistrantOrderKeys,
   StatusOptions,
 } from 'src/common/utils';
-import { Event } from 'src/event/event.entity';
+import { ApplicationStatus } from 'src/common/enums/application-status.enum';
+import {
+  NewApplicationDTO,
+  UpdateApplicationDTO,
+} from 'src/common/dtos/application.dto';
+import { AttachmentStatus, EventStatus } from 'src/common/enums';
 
 @Injectable()
-export class RegistrantService {
+export class ApplicationService {
   constructor(
-    @InjectRepository(Registrant)
-    private registrantRepository: Repository<Registrant>,
+    @InjectRepository(Application)
+    private applicationRepository: Repository<Application>,
 
-    @InjectRepository(RegistrantAttachment)
-    private registrantAttachmentRepository: Repository<RegistrantAttachment>,
+    @InjectRepository(ApplicationAttachment)
+    private applicationAttachmentRepository: Repository<ApplicationAttachment>,
 
     private userService: UserService,
     private eventService: EventService,
@@ -54,14 +53,14 @@ export class RegistrantService {
     private selectedDivisionService: SelectedDivisionService,
   ) {}
 
-  private readonly logger = new Logger(RegistrantService.name, {
+  private readonly logger = new Logger(ApplicationService.name, {
     timestamp: true,
   });
 
   async findOne(
-    where: FindOptionsWhere<Registrant> | FindOptionsWhere<Registrant>[],
-    relations?: FindOptionsRelations<Registrant>,
-    order?: FindOptionsOrder<Registrant>,
+    where: FindOptionsWhere<Application> | FindOptionsWhere<Application>[],
+    relations?: FindOptionsRelations<Application>,
+    order?: FindOptionsOrder<Application>,
     cache?:
       | number
       | boolean
@@ -70,16 +69,16 @@ export class RegistrantService {
           milliseconds: number;
         },
   ) {
-    const [registrant] = await this.registrantRepository.find({
+    const [application] = await this.applicationRepository.find({
       where,
       relations,
       order,
       cache,
     });
 
-    if (!registrant) throw new NotFoundException('Registrant not found!');
+    if (!application) throw new NotFoundException('Application not found!');
 
-    return registrant;
+    return application;
   }
 
   async findAll(
@@ -87,8 +86,8 @@ export class RegistrantService {
     take: number,
     skip: number,
     userId: number,
-    order?: OrderOptions<RegistrantOrderKeys>,
-    status?: StatusOptions<RegistrantStatus>[],
+    order?: OrderOptions<ApplicationOrderKeys>,
+    status?: StatusOptions<ApplicationStatus>[],
     cache?:
       | number
       | boolean
@@ -100,42 +99,44 @@ export class RegistrantService {
     let statusQuery;
     if (status?.length) statusQuery = In(status);
 
-    let orderDump: OrderOptions<RegistrantOrderKeys> = { created_at: 'ASC' };
+    let orderDump: OrderOptions<ApplicationOrderKeys> = { created_at: 'ASC' };
     if (order) orderDump = { ...order };
 
-    const [registrants, total] = await this.registrantRepository.findAndCount({
-      where: [
-        {
-          event: {
-            id: eventId,
-            author: { id: userId },
-          },
-          status: statusQuery,
-        },
-        {
-          event: {
-            id: eventId,
-            registrants: {
-              user: { id: userId },
+    const [applications, total] = await this.applicationRepository.findAndCount(
+      {
+        where: [
+          {
+            event: {
+              id: eventId,
+              author: { id: userId },
             },
+            status: statusQuery,
           },
-          status: statusQuery,
+          {
+            event: {
+              id: eventId,
+              applications: {
+                user: { id: userId },
+              },
+            },
+            status: statusQuery,
+          },
+        ],
+        relations: {
+          event: false,
+          user: true,
         },
-      ],
-      relations: {
-        event: false,
-        user: true,
+        order: {
+          ...orderDump,
+          id: 'ASC',
+        },
+        skip,
+        take: take + 1,
+        cache,
       },
-      order: {
-        ...orderDump,
-        id: 'ASC',
-      },
-      skip,
-      take: take + 1,
-      cache,
-    });
+    );
 
-    let base = `/registrants?eventid=${eventId}`;
+    let base = `/applications?eventid=${eventId}`;
     if (order) {
       base +=
         '&order=' +
@@ -150,14 +151,14 @@ export class RegistrantService {
     const last = total - take > 0 ? `${base}&skip=${total - take}` : null;
 
     const next =
-      registrants.length > take ? `${base}&skip=${take + skip}` : null;
+      applications.length > take ? `${base}&skip=${take + skip}` : null;
 
     skip = skip - take;
     const prev = skip > 0 ? `${base}&skip=${skip}` : null;
 
     return {
-      registrants:
-        registrants.length > take ? registrants.slice(0, take) : registrants,
+      applications:
+        applications.length > take ? applications.slice(0, take) : applications,
       pagination: {
         first_page: base,
         next_page: next,
@@ -167,11 +168,11 @@ export class RegistrantService {
     };
   }
 
-  async create(newRegistrant: NewRegistrantDTO, userId: number) {
+  async create(newApplication: NewApplicationDTO, userId: number) {
     const [user, event] = await Promise.all([
       this.userService.findById(userId),
       this.eventService.findById(
-        newRegistrant.event_id,
+        newApplication.event_id,
         undefined,
         undefined,
         {
@@ -184,33 +185,35 @@ export class RegistrantService {
       ),
     ]);
 
-    const registrant = new Registrant();
-    registrant.user = user;
-    registrant.event = event;
+    const application = new Application();
+    application.user = user;
+    application.event = event;
 
-    if (newRegistrant.selected_divisions.length > event.max_selected_division) {
+    if (
+      newApplication.selected_divisions.length > event.max_selected_division
+    ) {
       throw new BadRequestException(
         'Number of selected divisions exceeds the maximum selected.',
       );
     }
 
-    registrant.selected_divisions = await this.selectedDivisionService.add(
-      newRegistrant.selected_divisions,
+    application.selected_divisions = await this.selectedDivisionService.add(
+      newApplication.selected_divisions,
     );
 
-    return this.registrantRepository.save(registrant);
+    return this.applicationRepository.save(application);
   }
 
   async addAttachments(
-    registrantId: number,
+    applicationId: number,
     userId: number,
     files?: Express.Multer.File[],
   ) {
     if (!files?.length) return;
 
-    const registrant = await this.findOne(
+    const application = await this.findOne(
       {
-        id: registrantId,
+        id: applicationId,
         user: { id: userId },
       },
       {
@@ -220,11 +223,11 @@ export class RegistrantService {
       true,
     );
 
-    const count = registrant.attachments.length;
+    const count = application.attachments.length;
 
     if (count + files.length > MAX_NUMBER_ATTACHMENTS) {
       throw new BadRequestException(
-        `Cannot add ${files.length} attachment(s). You have ${count}/${MAX_NUMBER_ATTACHMENTS} attachments for this registrant.`,
+        `Cannot add ${files.length} attachment(s). You have ${count}/${MAX_NUMBER_ATTACHMENTS} attachments for this application.`,
       );
     }
 
@@ -238,7 +241,7 @@ export class RegistrantService {
     }[] = [];
 
     try {
-      return await this.registrantRepository.manager.transaction(
+      return await this.applicationRepository.manager.transaction(
         async (manager) => {
           metadatas = await this.attachmentService.uploadAttachments(
             files,
@@ -247,12 +250,12 @@ export class RegistrantService {
           );
           const attachments = this.attachmentService.add(
             metadatas,
-            RegistrantAttachment,
+            ApplicationAttachment,
           );
 
           manager
-            .getRepository(RegistrantAttachment)
-            .save(attachments.map((a) => ({ ...a, registrant })));
+            .getRepository(ApplicationAttachment)
+            .save(attachments.map((a) => ({ ...a, application })));
 
           return attachments;
         },
@@ -268,46 +271,47 @@ export class RegistrantService {
         }));
 
         this.storageService.bulkDeleteObjectsFromR2(objects);
-        this.registrantAttachmentRepository.delete({
+        this.applicationAttachmentRepository.delete({
           storage_key: In(metadatas.map((m) => m.storage_key)),
         });
       }
 
-      this.logger.error('Failed to add registrant attachments!', error.stack);
+      this.logger.error('Failed to add application attachments!', error.stack);
 
       throw error;
     }
   }
 
   async update(
-    updatedData: UpdateRegistrantDTO,
-    registrantId: number,
+    updatedData: UpdateApplicationDTO,
+    applicationId: number,
     userId: number,
   ) {
-    const subQb = this.registrantRepository.manager.getRepository(Event)
+    const subQb = this.applicationRepository.manager
+      .getRepository(Event)
       .createQueryBuilder('event')
       .select('event.id')
       .where('event.author_id = :userId');
 
-    const { affected } = await this.registrantRepository
+    const { affected } = await this.applicationRepository
       .createQueryBuilder()
       .update()
       .set(updatedData)
-      .where('id = :registrantId')
+      .where('id = :applicationId')
       .andWhere(`event_id IN ( ${subQb.getQuery()} )`)
       .andWhere('deleted_at IS NULL')
-      .setParameters({ registrantId, userId })
+      .setParameters({ applicationId, userId })
       .execute();
 
-    if (affected === 0) throw new NotFoundException('Registrant not found!');
+    if (affected === 0) throw new NotFoundException('Application not found!');
 
     return { affected };
   }
 
-  async remove(registrantId: number, userId: number) {
-    const registrant = await this.findOne(
+  async remove(applicationId: number, userId: number) {
+    const application = await this.findOne(
       {
-        id: registrantId,
+        id: applicationId,
         user: { id: userId },
       },
       {
@@ -318,16 +322,17 @@ export class RegistrantService {
       undefined,
     );
 
-    if (registrant.status !== RegistrantStatus.WAITING) {
-      return this.registrantRepository.softRemove(registrant);
+    if (application.status !== ApplicationStatus.WAITING) {
+      return this.applicationRepository.softRemove(application);
     }
 
-    registrant.attachments.forEach((attachment) =>
+    application.attachments.forEach((attachment) =>
       this.storageService.deleteObjectFromR2(
         attachment.storage_key,
         R2_BUCKET.PRIVATE,
       ),
     );
-    return this.registrantRepository.remove(registrant);
+
+    return this.applicationRepository.remove(application);
   }
 }

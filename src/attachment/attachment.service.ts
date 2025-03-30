@@ -4,9 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  ApplicationAttachment,
   Attachment,
   EventAttachment,
-  RegistrantAttachment,
 } from './attachment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
@@ -21,8 +21,8 @@ export class AttachmentService {
     @InjectRepository(EventAttachment)
     private eventAttachmentRepository: Repository<EventAttachment>,
 
-    @InjectRepository(RegistrantAttachment)
-    private registrantAttachmentRepository: Repository<RegistrantAttachment>,
+    @InjectRepository(ApplicationAttachment)
+    private applicationAttachmentRepository: Repository<ApplicationAttachment>,
 
     private storageService: StorageService,
   ) {}
@@ -40,8 +40,8 @@ export class AttachmentService {
     });
   }
 
-  async showAll<T extends EventAttachment | RegistrantAttachment>(
-    entity: 'event' | 'registrant',
+  async showAll<T extends EventAttachment | ApplicationAttachment>(
+    entity: 'event' | 'application',
     where: FindOptionsWhere<T> | FindOptionsWhere<T>[],
     cache?:
       | number
@@ -54,7 +54,7 @@ export class AttachmentService {
     const repo =
       entity === 'event'
         ? this.eventAttachmentRepository
-        : this.registrantAttachmentRepository;
+        : this.applicationAttachmentRepository;
 
     return repo.find({
       where,
@@ -64,7 +64,7 @@ export class AttachmentService {
 
   async findById(
     attachmentId: number,
-    entity: 'event' | 'registrant',
+    entity: 'event' | 'application',
     userId: number,
     cache?:
       | number
@@ -77,18 +77,18 @@ export class AttachmentService {
     const repo =
       entity === 'event'
         ? this.eventAttachmentRepository
-        : this.registrantAttachmentRepository;
+        : this.applicationAttachmentRepository;
 
     const relations =
       entity === 'event'
         ? {
             event: {
               author: true,
-              registrants: { user: true },
+              applications: { user: true },
             },
           }
         : {
-            registrant: {
+            application: {
               user: true,
               event: { author: true },
             },
@@ -109,13 +109,13 @@ export class AttachmentService {
         const eventAttachment = attachment as EventAttachment;
         authorizedUserIds = [
           eventAttachment.event.author.id,
-          ...eventAttachment.event.registrants.map((r) => r.user.id),
+          ...eventAttachment.event.applications.map((a) => a.user.id),
         ];
       } else {
-        const registrantAttachment = attachment as RegistrantAttachment;
+        const applicationAttachment = attachment as ApplicationAttachment;
         authorizedUserIds = [
-          registrantAttachment.registrant.user.id,
-          registrantAttachment.registrant.event.author.id,
+          applicationAttachment.application.user.id,
+          applicationAttachment.application.event.author.id,
         ];
       }
 
@@ -176,14 +176,14 @@ export class AttachmentService {
 
   async removeAttachment(
     attachmentId: number,
-    entity: 'event' | 'registrant',
+    entity: 'event' | 'application',
     entityId: number,
     userId: number,
   ) {
     const repo =
       entity === 'event'
         ? this.eventAttachmentRepository
-        : this.registrantAttachmentRepository;
+        : this.applicationAttachmentRepository;
 
     const additionalWhere =
       entity === 'event'
@@ -194,7 +194,7 @@ export class AttachmentService {
             },
           }
         : {
-            registrant: {
+            application: {
               id: entityId,
               user: { id: userId },
             },

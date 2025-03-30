@@ -1,8 +1,8 @@
 import { Exclude, Expose } from 'class-transformer';
+import { Application } from 'src/application/application.entity';
 import { RefreshToken } from 'src/auth/auth.entity';
 import { UserDegree, UserDepartment } from 'src/common/enums';
 import { Event } from 'src/event/event.entity';
-import { Registrant } from 'src/registrant/registrant.entity';
 import {
   Column,
   CreateDateColumn,
@@ -80,9 +80,9 @@ export class User {
   @Expose({ groups: ['user'] })
   events: Event[];
 
-  @OneToMany(() => Registrant, (registrant) => registrant.user)
+  @OneToMany(() => Application, (application) => application.user)
   @Expose({ groups: ['user'] })
-  registrants: Registrant[];
+  applications: Application[];
 
   @OneToMany(() => RefreshToken, (refresh_token) => refresh_token.user)
   @Exclude()

@@ -29,8 +29,8 @@ import {
   Repository,
 } from 'typeorm';
 import { EventService } from 'src/event/event.service';
-import { RegistrantService } from 'src/registrant/registrant.service';
 import { Event } from 'src/event/event.entity';
+import { ApplicationService } from 'src/application/application.service';
 
 @Injectable()
 export class InterviewService {
@@ -45,7 +45,7 @@ export class InterviewService {
     private interviewScheduleRepository: Repository<InterviewSchedule>,
 
     private eventService: EventService,
-    private registrantService: RegistrantService,
+    private applicationService: ApplicationService,
   ) {}
 
   async findInterviewById(
@@ -100,7 +100,7 @@ export class InterviewService {
           interview: {
             id: interviewId,
             event: {
-              registrants: {
+              applications: {
                 user: { id: userId },
               },
             },
@@ -109,7 +109,7 @@ export class InterviewService {
       ],
       relations: {
         primary_division: true,
-        registrant: {
+        application: {
           user: true,
         },
       },
@@ -125,12 +125,12 @@ export class InterviewService {
           interview_schedules: [] as InterviewSchedule[],
         });
 
-      const { interview, registrant, deleted_at, ...detailSchedule } =
+      const { interview, application, deleted_at, ...detailSchedule } =
         restSchedule;
-      const { id, status, notes, user, ...restRegistrant } = registrant;
+      const { id, status, notes, user, ...restApplication } = application;
       divisionMap.get(primary_division.id).interview_schedules.push({
         ...detailSchedule,
-        registrant: {
+        application: {
           id,
           status,
           notes,
@@ -169,7 +169,8 @@ export class InterviewService {
     interviewId: number,
     userId: number,
   ) {
-    const subQb = this.interviewRepository.manager.getRepository(Event)
+    const subQb = this.interviewRepository.manager
+      .getRepository(Event)
       .createQueryBuilder('event')
       .select('event.id')
       .where('event.author_id = :userId');
@@ -221,11 +222,12 @@ export class InterviewService {
     blockingId: number,
     userId: number,
   ) {
-    const subQb2 = this.interviewRepository.manager.getRepository(Event)
+    const subQb2 = this.interviewRepository.manager
+      .getRepository(Event)
       .createQueryBuilder('event')
       .select('event.id')
       .where('event.author_id = :userId');
-    
+
     const subQb = this.interviewRepository
       .createQueryBuilder()
       .select('id')
@@ -279,15 +281,15 @@ export class InterviewService {
   async bookingSchedule(
     schedule: InterviewScheduleDTO,
     interviewId: number,
-    registrantId: number,
+    applicationId: number,
     userId: number,
   ) {
     const selectedTime = new Date(schedule.selected_time);
 
-    const [registrant, interview] = await Promise.all([
-      this.registrantService.findOne(
+    const [application, interview] = await Promise.all([
+      this.applicationService.findOne(
         {
-          id: registrantId,
+          id: applicationId,
           user: { id: userId },
         },
         {
@@ -360,10 +362,10 @@ export class InterviewService {
         'The selected time is within the blocking range!',
       );
 
-    const primaryDivision = registrant.selected_divisions[0].division;
+    const primaryDivision = application.selected_divisions[0].division;
     if (!primaryDivision)
       throw new BadRequestException(
-        'No primary division selection found for this registrant',
+        'No primary division selection found for this application',
       );
 
     const [existSchedule] = await this.interviewScheduleRepository.find({
@@ -396,7 +398,7 @@ export class InterviewService {
     return this.interviewScheduleRepository.save(
       this.interviewScheduleRepository.create({
         ...schedule,
-        registrant,
+        application,
         interview,
         primary_division: primaryDivision,
       }),
@@ -412,7 +414,7 @@ export class InterviewService {
       where: {
         id: scheduleId,
         interview: { id: interviewId },
-        registrant: {
+        application: {
           user: { id: userId },
         },
       },

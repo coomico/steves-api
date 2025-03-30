@@ -1,7 +1,7 @@
 import { Exclude, Expose } from 'class-transformer';
+import { Application } from 'src/application/application.entity';
 import { Division } from 'src/division/division.entity';
 import { Event } from 'src/event/event.entity';
-import { Registrant } from 'src/registrant/registrant.entity';
 import {
   Column,
   CreateDateColumn,
@@ -114,10 +114,10 @@ export class InterviewSchedule {
   @Exclude()
   deleted_at: Date;
 
-  @OneToOne(() => Registrant, (registrant) => registrant.interview_schedule)
-  @JoinColumn({ name: 'registrant_id' })
+  @OneToOne(() => Application, (application) => application.interview_schedule)
+  @JoinColumn({ name: 'application_id' })
   @Expose({ groups: ['schedule'] })
-  registrant: Registrant;
+  application: Application;
 
   // call Interview endpoint
   @ManyToOne(() => Interview, (interview) => interview.interview_schedules)

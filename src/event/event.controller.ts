@@ -43,9 +43,10 @@ import {
   LogoBannerValidation,
 } from 'src/common/pipe/attachment-validation.pipe';
 import { User } from 'src/common/decorator/user.decorator';
+import { ResponseTransformInterceptor } from 'src/common/interceptor/response.interceptor';
 
 @Controller('events')
-@UseInterceptors(ClassSerializerInterceptor)
+@UseInterceptors(ClassSerializerInterceptor, new ResponseTransformInterceptor())
 export class EventController {
   constructor(
     private eventService: EventService,

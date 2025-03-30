@@ -20,9 +20,10 @@ import { AccessAuthGuard } from 'src/auth/guard/access.guard';
 import { CACHE_TTL } from 'src/common/utils';
 import { Response } from 'express';
 import { User } from 'src/common/decorator/user.decorator';
+import { ResponseTransformInterceptor } from 'src/common/interceptor/response.interceptor';
 
 @Controller('links')
-@UseInterceptors(ClassSerializerInterceptor)
+@UseInterceptors(ClassSerializerInterceptor, new ResponseTransformInterceptor())
 export class LinkController {
   constructor(private linkService: LinkService) {}
 
@@ -39,6 +40,7 @@ export class LinkController {
     @Res() res: Response,
   ) {
     const link = await this.linkService.findById(linkId, userId, CACHE_TTL);
+    console.dir(link);
     return res.redirect(link.url);
   }
 

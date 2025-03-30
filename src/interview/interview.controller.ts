@@ -24,9 +24,10 @@ import {
 import { ApiBody } from '@nestjs/swagger';
 import { AccessAuthGuard } from 'src/auth/guard/access.guard';
 import { User } from 'src/common/decorator/user.decorator';
+import { ResponseTransformInterceptor } from 'src/common/interceptor/response.interceptor';
 
 @Controller('interviews')
-@UseInterceptors(ClassSerializerInterceptor)
+@UseInterceptors(ClassSerializerInterceptor, new ResponseTransformInterceptor())
 export class InterviewController {
   constructor(private interviewService: InterviewService) {}
 
@@ -133,13 +134,13 @@ export class InterviewController {
   bookingSchedule(
     @User('id') userId: number,
     @Param('id') interviewId: number,
-    @Query('registrantid') registrantId: number,
+    @Query('applicationid') applicationId: number,
     @Body() data: InterviewScheduleDTO,
   ) {
     return this.interviewService.bookingSchedule(
       data,
       interviewId,
-      registrantId,
+      applicationId,
       userId,
     );
   }

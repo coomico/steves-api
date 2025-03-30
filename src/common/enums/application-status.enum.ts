@@ -1,4 +1,4 @@
-export enum RegistrantStatus {
+export enum ApplicationStatus {
   WAITING = 'waiting',
   ACCEPTED = 'accepted',
   REJECTED = 'rejected',

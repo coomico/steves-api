@@ -3,7 +3,6 @@ import { Division } from 'src/division/division.entity';
 import { EventCategory, EventStatus } from 'src/common/enums';
 import { Interview } from 'src/interview/interview.entity';
 import { Link } from 'src/link/link.entity';
-import { Registrant } from 'src/registrant/registrant.entity';
 import { User } from 'src/user/user.entity';
 import {
   Column,
@@ -20,6 +19,7 @@ import {
 } from 'typeorm';
 import { Exclude, Expose } from 'class-transformer';
 import { Faq } from 'src/faq/faq.entity';
+import { Application } from 'src/application/application.entity';
 
 @Entity()
 export class Event {
@@ -92,12 +92,12 @@ export class Event {
   @Exclude()
   divisions: Division[];
 
-  // call Registrants endpoint
-  @OneToMany(() => Registrant, (registrant) => registrant.event, {
+  // call Applications endpoint
+  @OneToMany(() => Application, (application) => application.event, {
     cascade: ['soft-remove'],
   })
   @Exclude()
-  registrants: Registrant[];
+  applications: Application[];
 
   // call Links endpoint
   @OneToMany(() => Link, (link) => link.event, {

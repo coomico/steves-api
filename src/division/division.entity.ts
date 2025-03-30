@@ -68,7 +68,7 @@ export class Division {
   interview_schedules: InterviewSchedule[];
 
   @Expose({ groups: ['division'] })
-  get total_registrants() {
+  get total_applications() {
     return this.selected_divisions ? this.selected_divisions.length : 0;
   }
 }

@@ -11,8 +11,8 @@ import {
 
 @Entity({
   orderBy: {
-    id: 'ASC'
-  }
+    id: 'ASC',
+  },
 })
 export class Faq {
   @PrimaryGeneratedColumn()

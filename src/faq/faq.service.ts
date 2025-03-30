@@ -54,7 +54,8 @@ export class FaqService {
   }
 
   async update(modifiedFaq: UpdateFaqDTO, faqId: number, userId: number) {
-    const subQb = this.faqRepository.manager.getRepository(Event)
+    const subQb = this.faqRepository.manager
+      .getRepository(Event)
       .createQueryBuilder('event')
       .select('event.id')
       .where('event.author_id = :userId');

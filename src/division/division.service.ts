@@ -63,7 +63,8 @@ export class DivisionService {
     divisionId: number,
     userId: number,
   ) {
-    const subQb = this.divisionRepository.manager.getRepository(Event)
+    const subQb = this.divisionRepository.manager
+      .getRepository(Event)
       .createQueryBuilder('event')
       .select('event.id')
       .where('event.author_id = :userId');

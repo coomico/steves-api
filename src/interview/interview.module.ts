@@ -8,12 +8,12 @@ import {
 } from './interview.entity';
 import { InterviewController } from './interview.controller';
 import { EventModule } from 'src/event/event.module';
-import { RegistrantModule } from 'src/registrant/registrant.module';
+import { ApplicationModule } from 'src/application/application.module';
 
 @Module({
   imports: [
     EventModule,
-    RegistrantModule,
+    ApplicationModule,
     TypeOrmModule.forFeature([Interview, InterviewBlocking, InterviewSchedule]),
   ],
   exports: [InterviewService],

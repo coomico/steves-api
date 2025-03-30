@@ -54,7 +54,7 @@ export class LinkService {
       relations: {
         event: {
           author: true,
-          registrants: {
+          applications: {
             user: true,
           },
         },
@@ -67,7 +67,7 @@ export class LinkService {
     if (link.status === LinkStatus.PRIVATE) {
       const authorizedUserIds = [
         link.event.author.id,
-        ...link.event.registrants.map((r) => r.user.id),
+        ...link.event.applications.map((a) => a.user.id),
       ];
 
       if (authorizedUserIds.indexOf(userId) === -1) {
@@ -100,12 +100,9 @@ export class LinkService {
     );
   }
 
-  async update(
-    modifiedLink: UpdateLinkDTO,
-    linkId: number,
-    userId: number
-  ) {
-    const subQb = this.linkRepository.manager.getRepository(Event)
+  async update(modifiedLink: UpdateLinkDTO, linkId: number, userId: number) {
+    const subQb = this.linkRepository.manager
+      .getRepository(Event)
       .createQueryBuilder('event')
       .select('event.id')
       .where('event.author_id = :userId');

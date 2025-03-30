@@ -16,9 +16,10 @@ import { FaqService } from './faq.service';
 import { AccessAuthGuard } from 'src/auth/guard/access.guard';
 import { User } from 'src/common/decorator/user.decorator';
 import { FaqDTO, UpdateFaqDTO } from 'src/common/dtos';
+import { ResponseTransformInterceptor } from 'src/common/interceptor/response.interceptor';
 
 @Controller('faqs')
-@UseInterceptors(ClassSerializerInterceptor)
+@UseInterceptors(ClassSerializerInterceptor, new ResponseTransformInterceptor())
 export class FaqController {
   constructor(private faqService: FaqService) {}
 

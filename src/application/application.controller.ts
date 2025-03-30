@@ -15,29 +15,33 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { RegistrantService } from './registrant.service';
-import { NewRegistrantDTO, UpdateRegistrantDTO } from 'src/common/dtos';
+import { ApplicationService } from './application.service';
+import { AttachmentService } from 'src/attachment/attachment.service';
 import { AccessAuthGuard } from 'src/auth/guard/access.guard';
+import { User } from 'src/common/decorator/user.decorator';
+import { OrderParsePipe } from 'src/common/pipe/order-parse.pipe';
 import {
   MAX_NUMBER_ATTACHMENTS,
   OrderOptions,
   StatusOptions,
 } from 'src/common/utils';
-import { FilesInterceptor } from '@nestjs/platform-express';
-import { AttachmentService } from 'src/attachment/attachment.service';
-import { FileValidationService } from 'src/file_validation/file_validation.service';
-import { RegistrantAttachmentValidation } from 'src/common/pipe/attachment-validation.pipe';
-import { OrderParsePipe } from 'src/common/pipe/order-parse.pipe';
 import { StatusParsePipe } from 'src/common/pipe/status-parse.pipe';
-import { RegistrantStatus } from 'src/common/enums';
-import { RegistrantAttachment } from 'src/attachment/attachment.entity';
-import { User } from 'src/common/decorator/user.decorator';
+import { ApplicationStatus } from 'src/common/enums/application-status.enum';
+import {
+  NewApplicationDTO,
+  UpdateApplicationDTO,
+} from 'src/common/dtos/application.dto';
+import { ApplicationAttachment } from 'src/attachment/attachment.entity';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApplicationAttachmentValidation } from 'src/common/pipe/attachment-validation.pipe';
+import { FileValidationService } from 'src/file_validation/file_validation.service';
+import { ResponseTransformInterceptor } from 'src/common/interceptor/response.interceptor';
 
-@Controller('registrants')
-@UseInterceptors(ClassSerializerInterceptor)
-export class RegistrantController {
+@Controller('applications')
+@UseInterceptors(ClassSerializerInterceptor, new ResponseTransformInterceptor())
+export class ApplicationController {
   constructor(
-    private registrantService: RegistrantService,
+    private applicationService: ApplicationService,
     private attachmentService: AttachmentService,
   ) {}
 
@@ -45,16 +49,16 @@ export class RegistrantController {
   @UseGuards(AccessAuthGuard)
   async fetchById(
     @User('id') userId: number,
-    @Param('id') registrantId: number,
+    @Param('id') applicationId: number,
   ) {
-    const registrant = await this.registrantService.findOne(
+    const application = await this.applicationService.findOne(
       [
         {
-          id: registrantId,
+          id: applicationId,
           user: { id: userId },
         },
         {
-          id: registrantId,
+          id: applicationId,
           event: {
             author: { id: userId },
           },
@@ -75,12 +79,12 @@ export class RegistrantController {
       true,
     );
 
-    if (registrant.user.id === userId) {
-      const { user, deleted_at, ...rest } = registrant;
+    if (application.user.id === userId) {
+      const { user, deleted_at, ...rest } = application;
       return rest;
     }
 
-    const { event, deleted_at, ...rest } = registrant;
+    const { event, deleted_at, ...rest } = application;
     return rest;
   }
 
@@ -100,11 +104,11 @@ export class RegistrantController {
     @Query(
       'status',
       new ParseArrayPipe({ items: String, separator: ',', optional: true }),
-      new StatusParsePipe(RegistrantStatus),
+      new StatusParsePipe(ApplicationStatus),
     )
-    status?: StatusOptions<RegistrantStatus>[],
+    status?: StatusOptions<ApplicationStatus>[],
   ) {
-    return this.registrantService.findAll(
+    return this.applicationService.findAll(
       eventId,
       take,
       skip,
@@ -117,17 +121,17 @@ export class RegistrantController {
 
   @Post()
   @UseGuards(AccessAuthGuard)
-  regist(@User('id') userId: number, @Body() data: NewRegistrantDTO) {
-    return this.registrantService.create(data, userId);
+  apply(@User('id') userId: number, @Body() data: NewApplicationDTO) {
+    return this.applicationService.create(data, userId);
   }
 
   @Get(':id/attachments')
   @UseGuards(AccessAuthGuard)
-  getAttachments(@Param('id') registrantId: number) {
-    return this.attachmentService.showAll<RegistrantAttachment>(
-      'registrant',
+  getAttachments(@Param('id') applicationId: number) {
+    return this.attachmentService.showAll<ApplicationAttachment>(
+      'application',
       {
-        registrant: { id: registrantId },
+        application: { id: applicationId },
       },
       true,
     );
@@ -138,26 +142,26 @@ export class RegistrantController {
   @UseInterceptors(FilesInterceptor('attachments', MAX_NUMBER_ATTACHMENTS))
   uploadAttachments(
     @User('id') userId: number,
-    @Param('id') registrantId: number,
+    @Param('id') applicationId: number,
     @UploadedFiles(
-      new RegistrantAttachmentValidation(new FileValidationService()),
+      new ApplicationAttachmentValidation(new FileValidationService()),
     )
     files?: Express.Multer.File[],
   ) {
-    return this.registrantService.addAttachments(registrantId, userId, files);
+    return this.applicationService.addAttachments(applicationId, userId, files);
   }
 
-  @Delete(':rid/attachments/:aid')
+  @Delete(':apid/attachments/:atid')
   @UseGuards(AccessAuthGuard)
   removeAttachment(
     @User('id') userId: number,
-    @Param('rid') registrantId: number,
-    @Param('aid') attachmentId: number,
+    @Param('apid') applicationId: number,
+    @Param('atid') attachmentId: number,
   ) {
     return this.attachmentService.removeAttachment(
       attachmentId,
-      'registrant',
-      registrantId,
+      'application',
+      applicationId,
       userId,
     );
   }
@@ -166,15 +170,15 @@ export class RegistrantController {
   @UseGuards(AccessAuthGuard)
   update(
     @User('id') userId: number,
-    @Param('id') registrantId: number,
-    @Body() data: UpdateRegistrantDTO,
+    @Param('id') applicationId: number,
+    @Body() data: UpdateApplicationDTO,
   ) {
-    return this.registrantService.update(data, registrantId, userId);
+    return this.applicationService.update(data, applicationId, userId);
   }
 
   @Delete(':id')
   @UseGuards(AccessAuthGuard)
-  remove(@User('id') userId: number, @Param('id') registrantId: number) {
-    return this.registrantService.remove(registrantId, userId);
+  remove(@User('id') userId: number, @Param('id') applicationId: number) {
+    return this.applicationService.remove(applicationId, userId);
   }
 }

@@ -1,5 +1,5 @@
+import { Application } from 'src/application/application.entity';
 import { Division } from 'src/division/division.entity';
-import { Registrant } from 'src/registrant/registrant.entity';
 import {
   Column,
   DeleteDateColumn,
@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-@Index(['registrant', 'priority'], { unique: true })
+@Index(['application', 'priority'], { unique: true })
 export class SelectedDivision {
   @PrimaryGeneratedColumn()
   public id: number;
@@ -27,9 +27,9 @@ export class SelectedDivision {
   @DeleteDateColumn({ type: 'timestamptz' })
   public deleted_at: Date;
 
-  @ManyToOne(() => Registrant)
-  @JoinColumn({ name: 'registrant_id' })
-  public registrant: Registrant;
+  @ManyToOne(() => Application)
+  @JoinColumn({ name: 'application_id' })
+  public application: Application;
 
   @ManyToOne(() => Division)
   @JoinColumn({ name: 'division_id' })
