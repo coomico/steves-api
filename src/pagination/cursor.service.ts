@@ -5,7 +5,7 @@ import {
   encodeToBase64URL,
   ObjectWithProperties,
   OrderOptions,
-} from 'src/common/utils';
+} from '../common/utils';
 
 @Injectable()
 export class CursorService {

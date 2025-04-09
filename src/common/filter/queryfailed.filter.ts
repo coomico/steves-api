@@ -19,7 +19,7 @@ export class QueryFailedFilter implements ExceptionFilter {
     // https://www.postgresql.org/docs/current/errcodes-appendix.html
     switch (exception.code) {
       case '23505':
-        message = 'Data already exists! (Potential duplication)';
+        message = 'Data already exists or potential duplication!';
         error = 'Conflict';
         status = HttpStatus.CONFLICT;
         break;

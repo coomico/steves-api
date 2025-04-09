@@ -3,7 +3,7 @@ import {
   BadRequestException,
   PipeTransform,
 } from '@nestjs/common';
-import { Cursor, decodeFromBase64URL } from 'src/common/utils';
+import { Cursor, decodeFromBase64URL } from '../utils';
 
 export class CursorExtractionPipe implements PipeTransform {
   transform(value: string | undefined, metadata: ArgumentMetadata) {

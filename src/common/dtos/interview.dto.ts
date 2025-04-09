@@ -1,18 +1,26 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { IsISO8601, IsNumber, IsString, Min } from 'class-validator';
+import { IsDate } from '../decorator/is_date.decorator';
+import { IsTime } from '../decorator/is_time.decorator';
 
 export class InterviewDTO {
-  @ApiProperty()
-  @IsISO8601()
-  available_start: Date;
+  @IsDate()
+  date_start: Date;
 
-  @ApiProperty()
-  @IsISO8601()
-  available_end: Date;
+  @IsDate()
+  date_end: Date;
 
-  @ApiProperty()
+  @IsTime()
+  dailytime_start: string;
+
+  @IsTime()
+  dailytime_end: string;
+
+  @ApiProperty({
+    minimum: 5,
+  })
   @IsNumber()
-  @Min(1)
+  @Min(5)
   duration_minutes: number;
 }
 

@@ -4,7 +4,7 @@ import {
   Injectable,
   PipeTransform,
 } from '@nestjs/common';
-import { FileValidationService } from 'src/file_validation/file_validation.service';
+import { FileValidationService } from '../../file_validation/file_validation.service';
 import {
   LOGO_BANNER_MIMETYPES,
   MAX_LOGO_BANNER_SIZE,
@@ -69,7 +69,7 @@ export class LogoBannerValidation implements PipeTransform {
     }>,
     metadata: ArgumentMetadata,
   ) {
-    if (!value) return null;
+    if (!value || !Object.values(value).length) return null;
 
     const files: Partial<{
       [key: string]: Express.Multer.File;
@@ -92,6 +92,6 @@ export class LogoBannerValidation implements PipeTransform {
       });
     });
 
-    return files;
+    return Object.values(files).length !== 0 ? files : null;
   }
 }

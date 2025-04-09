@@ -21,11 +21,17 @@ export class Interview {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'timestamptz' })
-  available_start: Date;
+  @Column({ type: 'date' })
+  date_start: Date;
 
-  @Column({ type: 'timestamptz' })
-  available_end: Date;
+  @Column({ type: 'date' })
+  date_end: Date;
+
+  @Column({ type: 'timetz' })
+  dailytime_start: string;
+
+  @Column({ type: 'timetz' })
+  dailytime_end: string;
 
   @Column()
   duration_minutes: number;

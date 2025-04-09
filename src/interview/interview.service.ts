@@ -26,11 +26,13 @@ import {
   LessThan,
   LessThanOrEqual,
   MoreThan,
+  MoreThanOrEqual,
   Repository,
 } from 'typeorm';
 import { EventService } from 'src/event/event.service';
 import { Event } from 'src/event/event.entity';
 import { ApplicationService } from 'src/application/application.service';
+import { timeToMs } from 'src/common/utils';
 
 @Injectable()
 export class InterviewService {
@@ -284,7 +286,7 @@ export class InterviewService {
     applicationId: number,
     userId: number,
   ) {
-    const selectedTime = new Date(schedule.selected_time);
+    const startTime = new Date(schedule.selected_time);
 
     const [application, interview] = await Promise.all([
       this.applicationService.findOne(
@@ -302,61 +304,68 @@ export class InterviewService {
             priority: 'ASC',
           },
         },
+        true,
       ),
-      this.findInterviewById(interviewId, undefined, undefined, {
-        available_start: LessThanOrEqual(selectedTime),
-        available_end: MoreThan(selectedTime),
-      }),
+      this.findInterviewById(
+        interviewId,
+        undefined,
+        undefined,
+        {
+          date_start: LessThanOrEqual(startTime),
+          date_end: MoreThan(startTime),
+        },
+        true,
+      ),
     ]);
 
-    const selectedTimePlusDuration = new Date(
-      selectedTime.getTime() + interview.duration_minutes * 60 * 1000,
+    const endTime = new Date(
+      startTime.getTime() + interview.duration_minutes * 60 * 1000,
     );
 
-    const [existBlocking] = await this.interviewBlockingRepository
-      .createQueryBuilder('interview_blocking')
-      .where('interview_blocking.interview_id = :interviewId', { interviewId })
-      .andWhere(
-        new Brackets((qb) =>
-          qb
-            .where(
-              new Brackets((qb) =>
-                qb
-                  .where('interview_blocking.range_start >= :start', {
-                    start: selectedTime,
-                  })
-                  .andWhere('interview_blocking.range_end <= :end', {
-                    end: selectedTimePlusDuration,
-                  }),
-              ),
-            )
-            // is it overlap with selected time?
-            .orWhere(
-              new Brackets((qb) =>
-                qb
-                  .where('interview_blocking.range_start <= :start1', {
-                    start1: selectedTime,
-                  })
-                  .andWhere('interview_blocking.range_end >= :start2', {
-                    start2: selectedTime,
-                  }),
-              ),
-            )
-            // is it overlap with selected time + interview duration?
-            .orWhere(
-              new Brackets((qb) =>
-                qb
-                  .where('interview_blocking.range_start <= :end1', {
-                    end1: selectedTimePlusDuration,
-                  })
-                  .andWhere('interview_blocking.range_end >= :end2', {
-                    end2: selectedTimePlusDuration,
-                  }),
-              ),
-            ),
-        ),
-      )
-      .getMany();
+    const selectedDate = new Date();
+    selectedDate.setUTCDate(startTime.getUTCDate());
+    selectedDate.setUTCMonth(startTime.getUTCMonth());
+    selectedDate.setUTCFullYear(startTime.getUTCFullYear());
+    selectedDate.setUTCHours(0, 0, 0, 0);
+
+    const dailytimeStart = new Date(selectedDate);
+    const dailytimeEnd = new Date(selectedDate);
+    dailytimeStart.setUTCMilliseconds(timeToMs(interview.dailytime_start));
+    dailytimeEnd.setUTCMilliseconds(timeToMs(interview.dailytime_end));
+
+    if (dailytimeStart > startTime || dailytimeEnd < endTime) {
+      throw new NotFoundException(
+        "The selected time is outside of the interview's daily active time!",
+      );
+    }
+
+    const beforeStartTime = new Date(
+      startTime.getTime() - interview.duration_minutes * 60 * 1000,
+    );
+
+    const [existBlocking] = await this.interviewBlockingRepository.find({
+      where: [
+        {
+          // scenario 1:  blocking < start time < blocking
+          interview: { id: interviewId },
+          range_start: LessThanOrEqual(startTime),
+          range_end: MoreThanOrEqual(startTime),
+        },
+        {
+          // scenario 2:  blocking < end time < blocking
+          interview: { id: interviewId },
+          range_start: LessThanOrEqual(endTime),
+          range_end: MoreThanOrEqual(endTime),
+        },
+        {
+          // scenario 3:  start time < blocking < end time
+          interview: { id: interviewId },
+          range_start: MoreThanOrEqual(startTime),
+          range_end: LessThanOrEqual(endTime),
+        },
+      ],
+    });
+
     if (!!existBlocking)
       throw new ConflictException(
         'The selected time is within the blocking range!',
@@ -376,18 +385,7 @@ export class InterviewService {
         primary_division: {
           id: primaryDivision.id,
         },
-        selected_time: And(
-          MoreThan(
-            new Date(
-              selectedTime.getTime() - interview.duration_minutes * 60 * 1000,
-            ),
-          ),
-          LessThan(
-            new Date(
-              selectedTime.getTime() + interview.duration_minutes * 60 * 1000,
-            ),
-          ),
-        ),
+        selected_time: And(MoreThan(beforeStartTime), LessThan(endTime)),
       },
     });
     if (existSchedule)

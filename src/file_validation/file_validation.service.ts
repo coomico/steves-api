@@ -14,7 +14,7 @@ import {
   MIMETYPE_TO_EXTENSIONS,
   TEXT_MIMETYPES,
   VIDEO_MIMETYPES,
-} from 'src/common/utils';
+} from '../common/utils';
 
 @Injectable()
 export class FileValidationService {
@@ -68,11 +68,22 @@ export class FileValidationService {
   }
 
   sanitizeFilename(filename: string) {
-    return filename
-      .replace(/[\/\\]/g, '_')
-      .replace(/\.{2,}/g, '_')
-      .replace(/[^a-zA-Z0-9\._\-]/g, '_')
-      .trim();
+    const extIndex = filename.lastIndexOf('.');
+    const hasIndex = extIndex !== -1;
+    const ext = hasIndex ? filename.substring(extIndex) : '';
+    const filenameWithoutExt = hasIndex
+      ? filename.substring(0, extIndex)
+      : filename;
+
+    return (
+      filenameWithoutExt
+        .replace(/[\/\\]/g, '_')
+        .replace(/(?<=\S)\s+(?=\S)/g, '_')
+        .trim()
+        .replace(/(^\.+)/g, '')
+        .replace(/(\.{2,})|(\.+$)/g, '_')
+        .replace(/[^a-zA-Z0-9\._\-]/g, '_') + ext.replace(/\s+/g, '')
+    );
   }
 
   validateFile(file: Express.Multer.File, options?: FileValidationOptions) {

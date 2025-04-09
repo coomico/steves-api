@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DivisionService } from 'src/division/division.service';
 import { SelectedDivisionDTO } from 'src/common/dtos';
 import { SelectedDivision } from './selected_division.entity';
@@ -10,9 +14,17 @@ export class SelectedDivisionService {
   async add(newSelectedDivisions: SelectedDivisionDTO[]) {
     const selectedDivisions: SelectedDivision[] = [];
 
+    const seen = new Set<number>();
     const ids = newSelectedDivisions.map((div) => {
+      if (seen.has(div.division_id))
+        throw new ConflictException(
+          'There is the same division id for different selected divisions!',
+        );
+
+      seen.add(div.division_id);
       return { id: div.division_id };
     });
+
     const idPriorityMap = new Map(
       newSelectedDivisions.map((div) => [
         div.division_id,
