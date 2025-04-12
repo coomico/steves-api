@@ -8,6 +8,8 @@ import { StorageModule } from 'src/storage/storage.module';
 import { EventAttachment } from 'src/attachment/attachment.entity';
 import { AttachmentModule } from 'src/attachment/attachment.module';
 import { PaginationModule } from 'src/pagination/pagination.module';
+import { SocialAccountModule } from 'src/social_account/social_account.module';
+import { EventSocialAccount } from 'src/social_account/social_account.entity';
 
 @Module({
   imports: [
@@ -15,7 +17,8 @@ import { PaginationModule } from 'src/pagination/pagination.module';
     StorageModule,
     AttachmentModule,
     PaginationModule,
-    TypeOrmModule.forFeature([Event, EventAttachment]),
+    SocialAccountModule,
+    TypeOrmModule.forFeature([Event, EventAttachment, EventSocialAccount]),
   ],
   exports: [EventService],
   providers: [EventService, Event],

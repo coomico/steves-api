@@ -35,6 +35,11 @@ import { RefreshToken } from './auth/auth.entity';
 import { Faq } from './faq/faq.entity';
 import { ApplicationModule } from './application/application.module';
 import { Application } from './application/application.entity';
+import { SocialAccountModule } from './social_account/social_account.module';
+import {
+  EventSocialAccount,
+  UserSocialAccount,
+} from './social_account/social_account.entity';
 
 @Module({
   imports: [
@@ -70,6 +75,8 @@ import { Application } from './application/application.entity';
         InterviewBlocking,
         InterviewSchedule,
         RefreshToken,
+        UserSocialAccount,
+        EventSocialAccount,
       ],
       synchronize: process.env.NODE_ENV === 'production' ? false : true,
       logging: process.env.NODE_ENV === 'production' ? ['error'] : true,
@@ -80,6 +87,7 @@ import { Application } from './application/application.entity';
     StorageModule,
     PaginationModule,
     FileValidationModule,
+    SocialAccountModule,
   ],
   controllers: [AppController],
   providers: [AppService],

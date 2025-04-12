@@ -1,5 +1,12 @@
 import { EventCategory, EventStatus } from 'src/common/enums';
-import { IsEnum, IsISO8601, IsNumber, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsISO8601,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from 'class-validator';
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -36,6 +43,14 @@ export class EventDTO {
   @Type(() => Number)
   @IsNumber()
   max_selected_division: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUrl({
+    protocols: ['http', 'https'],
+    require_protocol: true,
+  })
+  web_url?: string;
 }
 
 export class CreateEventDTO extends OmitType(EventDTO, ['status'] as const) {}

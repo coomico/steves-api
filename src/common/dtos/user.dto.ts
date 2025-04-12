@@ -66,21 +66,13 @@ export class UpdateUserDTO extends PartialType(
   @MaxLength(300)
   bio?: string;
 
+  @ApiProperty()
   @IsOptional()
-  @IsUrl()
+  @IsUrl({
+    protocols: ['http', 'https'],
+    require_protocol: true,
+  })
   web_url?: string;
-
-  @IsOptional()
-  @IsUrl()
-  linkedin_url?: string;
-
-  @IsOptional()
-  @IsUrl()
-  github_url?: string;
-
-  @IsOptional()
-  @IsUrl()
-  instagram_url?: string;
 }
 
 export class UserInfo {

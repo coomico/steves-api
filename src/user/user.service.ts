@@ -9,12 +9,17 @@ import {
 } from 'typeorm';
 import { UpdateUserDTO, UserDTO } from 'src/common/dtos';
 import { UserOrUsers } from 'src/common/utils';
+import { SocialAccountDTO } from 'src/common/dtos/social_account.dto';
+import { UserSocialAccount } from 'src/social_account/social_account.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+
+    @InjectRepository(UserSocialAccount)
+    private userSocialAccountRepository: Repository<UserSocialAccount>,
   ) {}
 
   async findAll() {
@@ -86,5 +91,19 @@ export class UserService {
     if (affected === 0) throw new NotFoundException('User not found!');
 
     return { affected };
+  }
+
+  addSocialAccounts(newSocialAccounts: SocialAccountDTO[], id: number) {
+    return this.userSocialAccountRepository.save(
+      newSocialAccounts.map((social) => {
+        const socialAccount = new UserSocialAccount();
+
+        socialAccount.type = social.type;
+        socialAccount.url = social.url;
+        socialAccount.user = { id } as User;
+
+        return socialAccount;
+      }),
+    );
   }
 }

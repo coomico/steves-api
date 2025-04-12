@@ -36,6 +36,8 @@ import {
 import { EventAttachment } from 'src/attachment/attachment.entity';
 import { AttachmentService } from 'src/attachment/attachment.service';
 import { PaginationService } from 'src/pagination/pagination.service';
+import { SocialAccountDTO } from 'src/common/dtos/social_account.dto';
+import { EventSocialAccount } from 'src/social_account/social_account.entity';
 
 @Injectable()
 export class EventService {
@@ -45,6 +47,9 @@ export class EventService {
 
     @InjectRepository(EventAttachment)
     private eventAttachmentRepository: Repository<EventAttachment>,
+
+    @InjectRepository(EventSocialAccount)
+    private eventSocialAccountRepository: Repository<EventSocialAccount>,
 
     private userService: UserService,
     private storageService: StorageService,
@@ -465,6 +470,29 @@ export class EventService {
 
       throw error;
     }
+  }
+
+  async addSocialAccounts(
+    newSocialAccounts: SocialAccountDTO[],
+    eventId: number,
+    userId: number,
+  ) {
+    const event = await this.findById(
+      eventId,
+      undefined,
+      undefined,
+      { author: { id: userId } },
+      true,
+    );
+
+    return this.eventSocialAccountRepository.save(
+      newSocialAccounts.map((social) => {
+        return this.eventSocialAccountRepository.create({
+          ...social,
+          event,
+        });
+      }),
+    );
   }
 
   async remove(eventId: number, userId: number) {

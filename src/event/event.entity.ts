@@ -20,6 +20,7 @@ import {
 import { Exclude, Expose } from 'class-transformer';
 import { Faq } from 'src/faq/faq.entity';
 import { Application } from 'src/application/application.entity';
+import { EventSocialAccount } from 'src/social_account/social_account.entity';
 
 @Entity()
 export class Event {
@@ -55,6 +56,9 @@ export class Event {
   max_selected_division: number;
 
   @Column({ nullable: true })
+  web_url: string;
+
+  @Column({ nullable: true })
   logo: string;
 
   @Column({ nullable: true })
@@ -84,6 +88,17 @@ export class Event {
   })
   @Expose({ groups: ['event'] })
   interview: Interview;
+
+  @OneToMany(
+    () => EventSocialAccount,
+    (eventSocialAccount) => eventSocialAccount.event,
+    {
+      eager: true,
+      cascade: ['soft-remove'],
+    },
+  )
+  @Expose({ groups: ['event'] })
+  social_accounts: EventSocialAccount[];
 
   // call Divisions endpoint
   @OneToMany(() => Division, (division) => division.event, {

@@ -14,8 +14,8 @@ describe('timeToMs function', () => {
   it('should correctly convert simple time formats HH:MM:SS', () => {
     expect(timeToMs('00:00:00')).toBe(0);
     expect(timeToMs('01:00:00')).toBe(3600000); // 1 hour in ms
-    expect(timeToMs('00:01:00')).toBe(60000);   // 1 minute in ms
-    expect(timeToMs('00:00:01')).toBe(1000);    // 1 second in ms
+    expect(timeToMs('00:01:00')).toBe(60000); // 1 minute in ms
+    expect(timeToMs('00:00:01')).toBe(1000); // 1 second in ms
     expect(timeToMs('01:30:45')).toBe(5445000); // 1h 30m 45s in ms
     expect(timeToMs('23:59:59')).toBe(86399000); // 23h 59m 59s in ms
   });
@@ -57,8 +57,6 @@ describe('timeToMs function', () => {
 
   it('should handle time wrapping around midnight', () => {
     expect(timeToMs('01:00:00+02:00')).toBe(23 * 3600000); // 1AM +2 is 11PM previous day UTC
-    
-    const fullDay = 24 * 60 * 60 * 1000;
     expect(timeToMs('23:00:00-03:00')).toBe(2 * 3600000); // 26h becomes 2h
   });
 

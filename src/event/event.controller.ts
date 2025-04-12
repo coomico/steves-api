@@ -44,6 +44,11 @@ import {
 } from 'src/common/pipe/attachment-validation.pipe';
 import { User } from 'src/common/decorator/user.decorator';
 import { ResponseTransformInterceptor } from 'src/common/interceptor/response.interceptor';
+import { SocialAccountService } from 'src/social_account/social_account.service';
+import {
+  SocialAccountDTO,
+  UpdateSocialAccountDTO,
+} from 'src/common/dtos/social_account.dto';
 
 @Controller('events')
 @UseInterceptors(ClassSerializerInterceptor, new ResponseTransformInterceptor())
@@ -51,6 +56,7 @@ export class EventController {
   constructor(
     private eventService: EventService,
     private attachmentService: AttachmentService,
+    private socialAccountService: SocialAccountService,
   ) {}
 
   @Get()
@@ -225,6 +231,49 @@ export class EventController {
   ) {
     return this.attachmentService.removeAttachment(
       attachmentId,
+      'event',
+      eventId,
+      userId,
+    );
+  }
+
+  @Post(':id/social-accounts')
+  @UseGuards(AccessAuthGuard)
+  addSocialAccounts(
+    @User('id') userId: number,
+    @Param('id') eventId: number,
+    @Body(new ParseArrayPipe({ items: SocialAccountDTO }))
+    data: SocialAccountDTO[],
+  ) {
+    return this.eventService.addSocialAccounts(data, eventId, userId);
+  }
+
+  @Put(':eid/social-accounts/:sid')
+  @UseGuards(AccessAuthGuard)
+  updateSocialAccount(
+    @User('id') userId: number,
+    @Param('eid') eventId: number,
+    @Param('sid') socialAccountId: number,
+    @Body() data: UpdateSocialAccountDTO,
+  ) {
+    return this.socialAccountService.update(
+      data,
+      socialAccountId,
+      'event',
+      eventId,
+      userId,
+    );
+  }
+
+  @Delete(':eid/social-accounts/:sid')
+  @UseGuards(AccessAuthGuard)
+  deleteSocialAccount(
+    @User('id') userId: number,
+    @Param('eid') eventId: number,
+    @Param('sid') socialAccountId: number,
+  ) {
+    return this.socialAccountService.delete(
+      socialAccountId,
       'event',
       eventId,
       userId,

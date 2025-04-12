@@ -3,6 +3,7 @@ import { Application } from 'src/application/application.entity';
 import { RefreshToken } from 'src/auth/auth.entity';
 import { UserDegree, UserDepartment } from 'src/common/enums';
 import { Event } from 'src/event/event.entity';
+import { UserSocialAccount } from 'src/social_account/social_account.entity';
 import {
   Column,
   CreateDateColumn,
@@ -59,15 +60,6 @@ export class User {
   @Column({ nullable: true })
   web_url: string;
 
-  @Column({ nullable: true })
-  linkedin_url: string;
-
-  @Column({ nullable: true })
-  github_url: string;
-
-  @Column({ nullable: true })
-  instagram_url: string;
-
   @CreateDateColumn({ type: 'timestamptz' })
   @Expose({ groups: ['user'] })
   created_at: Date;
@@ -83,6 +75,16 @@ export class User {
   @OneToMany(() => Application, (application) => application.user)
   @Expose({ groups: ['user'] })
   applications: Application[];
+
+  @OneToMany(
+    () => UserSocialAccount,
+    (userSocialAccount) => userSocialAccount.user,
+    {
+      eager: true,
+    },
+  )
+  @Expose({ groups: ['user'] })
+  social_accounts: UserSocialAccount[];
 
   @OneToMany(() => RefreshToken, (refresh_token) => refresh_token.user)
   @Exclude()
